@@ -1,6 +1,6 @@
-# QuartzWrt ThirdParty Feed — luci-app-dockerman 的依赖库
+# QuartzWrt ThirdParty Feed — luci-lib-docker
 #
-# TODO 首次编译：按构建输出提示的校验和填入 PKG_MIRROR_HASH（去掉注释）。
+# 校验和已由构建系统回填（docs/TDD.md §4.1：PKG_MIRROR_HASH 锁定源码内容）。
 
 include $(TOPDIR)/rules.mk
 
@@ -14,8 +14,7 @@ PKG_MAINTAINER:=QuartzWrt ThirdParty Feed <https://github.com/quartzwrt/QuartzWr
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/lisaac/luci-lib-docker.git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-# 首次跑通后替换为真实校验和
-PKG_MIRROR_HASH:=skip
+PKG_MIRROR_HASH:=12a69d2623ae19b34d70ad84351ad82606ccf35e7c9278fbc5e9d6385fb65500
 
 include $(INCLUDE_DIR)/package.mk
 

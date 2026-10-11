@@ -6,7 +6,7 @@
 
 1. **薄 Makefile**：每个包只放 Makefile（声明 `PKG_SOURCE_URL` + 锁定版本 + 校验和），源码由构建系统下载。禁止 Git Submodule，禁止 Fork 上游改源码（不可变上游原则）。
 2. **严格锁定版本**：`PKG_SOURCE_VERSION` 必须指向具体 Tag/commit，严禁 `master`；首次编译后必须填入 `PKG_MIRROR_HASH`。
-3. **同名包重命名**：与 `quartz` feed 或基座存在同名包时，一律在本 feed 重命名（如 `luci-app-docker-thirdparty`），不依赖 feeds 顺序兜底。
+3. **同名包处理**：基座/`quartz` feed 已提供且满足需求的一律**不收录**（直接 DEPENDS，WP-7 规则）；确需自有版本控制的同名包，在本 feed 重命名（如 `luci-app-docker-thirdparty`），不依赖 feeds 顺序兜底（feeds 先列者胜，基座在前会遮蔽本 feed）。
 4. **准入评估**：新包引入前完成 TDD §6 准入清单（架构模式、上游活跃度、版本锁定、依赖冲突、内核前提、App 联动、许可证、供应链审计）。
 
 ## 引入新包的流程
@@ -21,6 +21,6 @@
 
 | 包 | 上游 | 锁定版本 | 状态 |
 | :--- | :--- | :--- | :--- |
-| `luci-app-openclash` | [vernesong/OpenClash](https://github.com/vernesong/OpenClash) | v0.47.156 | 待首次 CI 填入校验和 |
-| `luci-app-dockerman` | [lisaac/luci-app-dockerman](https://github.com/lisaac/luci-app-dockerman) | v0.5.9 | 待首次 CI 填入校验和 |
-| `luci-lib-docker` | [lisaac/luci-lib-docker](https://github.com/lisaac/luci-lib-docker) | v0.3.4 | 待首次 CI 填入校验和 |
+| `luci-lib-docker` | [lisaac/luci-lib-docker](https://github.com/lisaac/luci-lib-docker) | v0.3.4 | 已回填校验和 |
+
+> 2026-10-12 移除 `luci-app-openclash`、`luci-app-dockerman`：基座 luci feed 已提供同名包（feeds 先列者胜，本 feed 被遮蔽，且基座版本随基座 commit 锁定），按「基座已提供则不收录」原则删除，由 `quartz-defaults` 直接依赖基座版本。
