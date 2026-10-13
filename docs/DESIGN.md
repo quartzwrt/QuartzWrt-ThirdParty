@@ -161,9 +161,9 @@
 ### 4.3 与 daemon/App 的衔接（零代码改动路径）
 
 - **版本读取**：复用 probes.d（WP-4 §13.1）——为清单覆盖插件投放 `probes.d/<id>.json`（openclash 已有；新增 passwall 等），`services.<id>.<field>` 自动进快照 → Dashboard（WP-3 服务卡泛化）/App（WP-6 应用页）可见；
-- **投放归属**（D2）：
+- **投放归属**（D2 ✅）：
   - 通则：thirdparty 收录的新包**随薄 Makefile 投放探针描述文件**（WP-4 DESIGN §11 已登记约定）；
-  - 基座已有包（openclash/passwall）无我方包承载 → 倾向**新设 `quartz-runtime-resources` 小包**（thirdparty，承载「清单文件 + 探针描述符 + 镜像默认值」三件套），所有权清晰、不触 WP-4/共享文件（备选：quartz-defaults 追加式投放，跨 WP 登记）；
+  - 基座已有包（openclash/passwall）无我方包承载 → **新设 `quartz-runtime-resources` 小包**（thirdparty，承载「清单文件 + 探针描述符」；D8 后不含镜像默认值），所有权清晰、不触 WP-4/共享文件；
 - **更新状态比较**（「有新版本」）：需联网查询上游 release——v1 后置（TDD §4.4 已声明「随本清单治理落地」，触发动作归 WP-5/Bridge）。
 
 ### 4.4 运行时资源镜像源策略（D8 ✅ 用户决定：不做镜像）
@@ -233,8 +233,8 @@
 
 | # | 事项 | 推荐案 |
 | :--- | :--- | :--- |
-| D1 | 运行时资源清单载体与 schema | MD（人读）+ JSON（机读）双轨，§4.2 草案 schema |
-| D2 | 探针描述符/清单/镜像默认值的投放归属 | 新设 `quartz-runtime-resources` 小包（thirdparty）承载三件套；新收录包随包投放 |
+| D1 | 运行时资源清单载体与 schema | ✅ **用户拍板（2026-10-14「按推荐来」）**：MD（人读）+ JSON（机读）双轨，§4.2 草案 schema |
+| D2 | 探针描述符/清单的投放归属 | ✅ **用户拍板（按推荐）**：新设 `quartz-runtime-resources` 小包（thirdparty）承载**清单文件 + 探针描述符**（D8 后不含"镜像默认值"）；新收录包随包投放 |
 | D3 | bandix 引入方式与预编译二进制信任链 | ✅ **用户拍板（2026-10-14「按推荐来」）**：Fork 引入 + **接受预编译二进制信任链**（上游 release + 逐 arch SHA256；无源码可复现构建——供应链审计如实登记，将来可迁自建镜像） |
 | D4 | bandix × flow offloading 默认配置策略 | ✅ **用户拍板（按推荐）**：**保持基座默认**（不牺牲转发性能）+ 文档指引（提示用户如遇统计偏差可关卸载）；VM 实测结果回填本行 |
 | D5 | bandix 预装与否（quartz-defaults 追加） | ✅ **用户拍板（按推荐）**：**预装**（`quartz-defaults` 追加；体积实测后确认，超出预算再回退为按需安装） |
@@ -268,3 +268,4 @@
 *v0.1.5 2026-10-14 —— 用户评估「本项目由 AI 产出、商业化可能性低」→ §9 许可证风险条目补记（约束实际影响有限，标注/下架纪律保留）。*
 *v0.1.6 2026-10-14 —— **用户拍板一批（「d3、d4、d5 按推荐来；openclash 核心不需要我们来提供，用户自己上传即可；d9、d10 也按推荐来，d7 可以收录」）**：**D3 ✅**（接受预编译二进制信任链）/ **D4 ✅**（保持基座默认不牺牲转发性能 + 文档指引，VM 实测回填）/ **D5 ✅**（bandix 预装）/ **D7 ✅**（收录 mosdns LuCI + geo2txt，W7.7 转正）/ **D9 ✅**（CI 扩查）/ **D10 ✅**（软件源自建分阶段 + R2）；**D8 修订为"不做运行时资源镜像"**——openclash 核心用户自传、其余走插件自身下载，清单职责收缩为「登记 + 版本可见」（§4.4 重写；TDD §4.4 表述需按此修订，跨 WP 登记）；§6/§7/§8/§9 同步。**剩 D1/D2 两项待确认**。*
 *v0.1.7 2026-10-14 —— 用户拍板**收录形态 = 「受控 Fork + 镜像进本仓库」（形态 ③）**（「我以为你会放进 quartzwrt-thirdparty 的」→ 确认走镜像）：**已落地**——三个 fork 建立（`quartzwrt/QModem`〔`quartz` 分支固定 `PKG_RELEASE`，tag `v3.4.0_rc3-quartz1`〕、`quartzwrt/openwrt-bandix`、`quartzwrt/luci-app-bandix`）+ `scripts/sync-forks.sh`（整仓镜像、排除 `.git`）+ 镜像目录（`qmodem/`、`net/bandix/`、`net/luci-app-bandix/`，58 个 Makefile 均在 feeds 扫描深度 5 内；qmodem 33 包名人工核对与基座零撞名）+ `docs/FORKS.md` 台账 + README 收录表更新。**feed 仍只有 quartz/thirdparty 两条（锁定沿用 thirdparty commit，无新增 feed 行）**；§3.1/§3.2/§3.5（feed 形态三选、采用 ③）/§5/§7（W7.2/W7.8 落地项）/§8（D9 注）同步。*
+*v0.1.8 2026-10-14 —— **D1/D2 拍板（「按推荐来」）→ §8 全部 11 项决策闭环**：D1 = MD+JSON 双轨；D2 = 新设 `quartz-runtime-resources` 小包承载「清单 + 探针描述符」（D8 后不含镜像默认值）。**下一步实施**：推送 ThirdParty + Builder 锁定 bump → 单包编译验证（W7.2 bandix / W7.8 qmodem）。*
