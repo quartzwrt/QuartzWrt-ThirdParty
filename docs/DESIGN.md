@@ -2,7 +2,7 @@
 
 **版本**: v0.1（讨论稿）
 **日期**: 2026-10-14
-**状态**: 待拍板（§8 共 11 项 D1–D11；**D11 已确认并落地**——TDD 受控 Fork 规范）
+**状态**: 待拍板（§8 共 11 项 D1–D11；**D11 已确认并落地**——TDD 受控 Fork 规范；**D6 已拍板**——收录 qmodem〔受控 Fork〕）
 **依据**: TDD §3.1（双 Feed/不可变上游）、§4.1–4.4（版本锁定/运行时资源）、§5（模式 A/B）、§6（准入清单）；WORKPLAN §3 WP-7
 **基线**: 锁定基座 ImmortalWrt 25.12 @ `ce35a9e4`；本 feed 锁定 `30846b9`（`utils/luci-lib-docker` 唯一收录）
 
@@ -67,21 +67,25 @@
 
 **预装与否**（D5）：bandix 是「设备流量/限速」的 App 联动点，倾向加入 `quartz-defaults` 预装（体积待实测，VM 验收时记录）。
 
-### 3.2 qmodem（5G 模组管理；WP-11 登记候选）
+### 3.2 qmodem（5G 模组管理）——✅ 用户拍板收录（受控 Fork，2026-10-14）
 
 **上游**：`FUjr/QModem`，436★，活跃（2026-10-10 推送），版本 `3.4.0_rc3`。
 
-**风险与形态**：
-- **许可证 = MPL-2.0 + 附加条款「禁止商业使用」**（非 OSI 自由许可）——TDD §6「许可证兼容性」为**风险项**，须用户明确拍板（D6）；
-- **多包 feed**（`application/` + `luci/` + `driver/`，15+ 包）：核心 `qmodem`、`qmodem-settings`、`ubus-at-daemon`、`tom_modem`、`modem_scan`、`libqmodem-sms`、`qfirehose`、`quectel-CM` 变体、**厂商内核驱动**（`quectel_MHI`、`fibocom_QMI_WWAN`、nss 变体 kmod 等）；LuCI 侧 9 个应用（推荐 `luci-app-qmodem-next`，依赖 `+qmodem +qmodem-smsd +sms-forwarder-next`）；
-- **版本机制**：`version.mk` 以 **git commit count** 生成 `PKG_RELEASE`——依赖「feed 即 git 克隆」的形态，薄 Makefile 单包搬运会破坏其版本逻辑。
+**决策（D6 ✅）**：用户拍板「还是收录 qmodem，用受控 fork 的方式」→ **收录方式 = 受控 Fork + feed 形态 ②**（`quartzwrt/QModem` fork → `feeds.conf.extra` 追加 `src-git qmodem https://github.com/quartzwrt/QModem.git^<我们的 commit>`）。**可行性已实测（见下）**。
 
-**引入方式三选**（D6）：
-- 方案 A：**fork 后作为独立 feed 行**（`quartzwrt/QModem` fork → `feeds.conf.extra` 追加 `src-git qmodem …^<我们的 commit>`，§3.5 形态 ②）——零复制、保留其 git 版本逻辑（version.mk 依赖 git commit count）；代价 = 「双 Feed」叙事与 CI 检查需更新（TDD §3.1 登记）。
-- 方案 B：vendored 复制进 thirdparty——包量大、内核驱动重、与「不可变上游/薄 Makefile」冲突；**不推荐**。
-- 方案 C：**本 WP 不收录**，5G 模组能力作为设备专项另立 WP（含 FNet3399 真机验收），本 WP 仅登记评估结论。
+**可行性核查（2026-10-14，浅克隆 + 基座逐项对照）**：
+- **上游天生 feed 形态**：README 即 `src-git qmodem …` 安装法；仓库根即 `application/` + `luci/` + `driver/` 多包结构（`scripts/feeds` 扫描深度 5 内有效）；**无 submodule**；浅克隆 16 MB；
+- **包集**：`application/` 17 包（qmodem / qmodem-settings / ubus-at-daemon / tom_modem / modem_scan / libqmodem-sms / qmodem-seal / qmodem-smsd / qmodem-sipd / qmodem_monitor / sms-tool_q / sms-forwarder(-next) / quectel-CM-5G-M / qfirehose / ndisc6 / qmodem-voip）+ `luci/` 9 应用（推荐 `luci-app-qmodem-next`，`+qmodem +qmodem-smsd +sms-forwarder-next`）+ `driver/` 7 个 kmod（qmi_wwan_q/_f/_s、pcie_mhi、nss 三件套）；
+- **上游 CI 同族验证**：`.github/workflows/{x64,arm64}_apk.env` 在 **OpenWrt snapshot apk 体系**下对 **x86/64 与 aarch64（mvebu/cortexa53）** 编译 → 与我们基座（25.12 / apk / kernel 6.12）同族且覆盖两个目标架构；
+- **依赖闭包核对（基座侧全部可得）**：jq、bc、usbutils、pciutils、umbim（base tree）、terminfo（ncurses 子包）、xxd（vim 子包）、`kmod-usb-*` 系列（base tree）；其余依赖（ubus-at-daemon/qmodem-settings/tom_modem/sms-tool_q/modem_scan/qmodem-seal/…）全在 fork 内；`luci-app-qmodem-*` 额外依赖 `luci-app-mwan3`、`libubus-lua`（基座 luci feed 有）；
+- **feed 可提供 KernelPackage**：`include/scan.mk` GREP_STRING 含 `KernelPackage`，基座 packages feed `kernel/` 目录即先例 → fork 的 `driver/` 可作为 kmod 包；**nss 三件套 Kconfig 限定 `TARGET_qualcommax_*`** → 我们的目标不会被选中（无风险）。
 
-**倾向**：C（或 A 待定）——理由：设备强相关（x86 默认目标不需要）、许可证风险、包量/驱动重、App 联动面大；WP-11 已注明「不预装」。
+**三个必须处理点（已实测确认）**：
+1. **`PKG_RELEASE` 在 feed 形态下失效 → fork 必须固定**：`version.mk` 用 git commit count 生成 release，而 `scripts/feeds` 对 `^SHA` 锁定用 **`--depth 1` 浅克隆**（实测：`git rev-list --count HEAD .` = **1**、bump 匹配为空）→ release 恒为 1，**bump 锁定后版本号不变、apk 装不上升级** → 在 fork `quartz` 分支改为**固定 `QMODEM_RELEASE`（每次发布手动 bump）**；
+2. **驱动选择**：`qmodem` 的 Kconfig **默认 vendor QMI 驱动**（`kmod-qmi_wwan_q/_f/_s` 随包拉起），但**上游自己的 CI 用的是 generic 驱动**（`openwrt_package.config`：`qmodem_INCLUDE_generic-qmi-wwan=y`）→ 我们 v1 同样用 generic（seed 配置项，不动 fork），vendor 驱动留设备专项实测；**另注意**基座 packages feed 已有 `kmod-usb-net-qmi-wwan-quectel/-fibocom`（与 fork 的 `kmod-qmi_wwan_q/_f` 包名不同、可能产出同名 `.ko`）→ 两者不可同装（依赖冲突核查项）；
+3. **许可证约束（须接受）**：MPL-2.0 **+ 禁止商用附加条款**（非 OSI 许可）——收录即接受「不得商用」约束；随包携带 LICENSE、`FORKS.md` 登记、README 标注；**若 QuartzWrt 将来商业化，必须下架本包**。
+
+**落地边界（跨 WP 登记）**：① 设备侧预装（FNet3399）归 WP-11 的 `devices/` 层（DEVICE_PACKAGES + manifest 断言）；② 不预装则需要 D10 软件源自建才能按需安装（强联动）；③ App/probes 联动面已存在（fork 内带 procd init + rpcd ACL），登记为 seam（probes.d 描述符可随 fork 投放，后置）。
 
 ### 3.3 luci-app-mosdns（DNS；补充候选，P2）
 
@@ -200,7 +204,8 @@
 1. 收录包**单包编译通过**；全量构建进镜像——预装则 manifest 在列（`check-manifest.sh` 断言），不预装则 `bin/packages/<arch>/thirdparty/` 产出 apk 且镜像内 `apk add` 实测安装成功；
 2. **VM 验收（bandix）**：procd 服务运行、LuCI 页真数据（流量/设备表）、rpcd `luci.bandix` 可调、快照出现 `services.bandix`；流量统计与对照（nlbwmon/ifstat）抽样一致；eBPF/BTF 在 x86_64 与 aarch64（RK3399）双目标核实；flow offloading 交互实测（D4 依据）；
 3. **运行时资源清单成文**（MD + JSON）+ openclash/passwall 版本探针 VM 实测可见（`services.openclash.core` / `services.passwall.core`）；
-4. 文档同步：TDD 相关段落（§4.4 如涉及）/ README / WORKPLAN 回写。
+4. **qmodem（W7.8）**：依赖闭包单包编译通过（qmodem + `luci-app-qmodem-next` + generic QMI 驱动）；全量构建进镜像（`bin/packages/<arch>/qmodem/` 产出 apk）；VM 内 `apk add` 安装成功、LuCI 页面在 quartz 主题下逐页渲染正常、procd 服务启动；`PKG_RELEASE` 固定后 **bump 锁定 commit → 版本号递增 → apk 可升级**（同版本不可升级的反例回归）；
+5. 文档同步：TDD 相关段落（§4.4 如涉及）/ README / WORKPLAN 回写。
 
 ---
 
@@ -215,6 +220,7 @@
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
 | W7.6 | 文档同步（README / TDD 两副本如涉及 / WORKPLAN） | W7.5 |
 | （可选）W7.7 | mosdns LuCI 收录（P2，按 D7） | D7 |
+| W7.8 | **qmodem 收录**（受控 Fork）：建 `quartzwrt/QModem` fork → fork 固定 `PKG_RELEASE`（quartz 分支）→ `feeds.conf.extra` 增 feed 行（锁 commit）→ 依赖闭包单包编译（qmodem + luci-app-qmodem-next + generic 驱动）→ 全量构建 → VM 安装/渲染验收（quartz 主题逐页） | D6 ✅/D10 |
 
 ---
 
@@ -227,7 +233,7 @@
 | D3 | bandix 引入方式与预编译二进制信任链 | **Fork 引入（§3.5，用户 2026-10-14 确认）**：fork 范围＝**仅 `openwrt-bandix` + `luci-app-bandix`**（核心 `timsaya/bandix` 不 fork——通用 Linux 工具，只消费其 release 二进制 + SHA256）；两 fork 均为包根形态 → **feed 形态 ②（独立 feed 行，锁 commit）**；适配（主题/i18n/App 联动）在 fork 的 `quartz` 分支承载 |
 | D4 | bandix × flow offloading 默认配置策略 | VM 实测后定：若软件卸载影响统计 → 预置关卸载（或文档指引），不默认牺牲转发性能 |
 | D5 | bandix 预装与否（quartz-defaults 追加） | 预装（App 联动点；体积实测后确认） |
-| D6 | qmodem：许可证风险（禁商用）+ 引入方式 | 本 WP 不收录，另立设备专项 WP（方案 C）；如坚持收录走方案 A（独立 feed 行，**fork 后**锁我们 commit，§3.5） |
+| D6 | qmodem 收录（许可证风险 + 引入方式） | ✅ **用户拍板（2026-10-14「还是收录 qmodem 吧，用受控 fork」）**：收录 = 受控 Fork + feed 形态 ②（`quartzwrt/QModem` → `feeds.conf.extra` 锁 commit 行）；**接受** MPL-2.0+禁商用约束（商用化即下架）；fork 固定 `PKG_RELEASE`；v1 用 generic QMI 驱动（vendor 驱动留设备专项）；设备预装归 WP-11 |
 | D7 | luci-app-mosdns（+geo2txt）收录 | P2 候选池，可后置 |
 | D8 | 镜像源策略 | v1 文档化 + 默认值投放；自建镜像后置 |
 | D9 | CI 同名包检查扩到基座 feed + 预装包 manifest 断言登记 | 扩展扫描（跨 WP 登记 WP-1） |
@@ -240,7 +246,8 @@
 
 - **bandix eBPF/BTF 前提**：aarch64（RK3399）未验；上游无源码可复现构建（信任链 = release + hash）；
 - **flow offloading 交互**：基座默认开软件卸载（`flow_offloading 1`）——与 eBPF 统计的兼容性需实测，可能影响 D4/D5；
-- **qmodem 许可证**：MPL-2.0 + 禁商用附加条款与 QuartzWrt 再分发策略的兼容性，须用户判断；
+- **qmodem 许可证**：MPL-2.0 + 禁商用附加条款——**用户已拍板接受**（收录前提）；须随包携带 LICENSE + `FORKS.md`/README 标注；**QuartzWrt 商业化即须下架**；
+- **qmodem 工程风险（已实测，均有对策）**：① `PKG_RELEASE` 在 feeds 浅克隆下恒为 1 → fork 固定 release；② vendor QMI 驱动默认拉起（上游 CI 用 generic）→ v1 用 generic，vendor 留设备专项；③ 与基座 `kmod-usb-net-qmi-wwan-quectel/-fibocom` 可能产出同名 `.ko` → 不可同装（冲突核查项）；④ qmodem LuCI 页在 quartz 主题下需逐页视觉回归（WP-2 经验：第三方 LuCI 常有 cbi/主题机制缺口）；
 - **滚动资源**（`releases/latest`）无法预固定 SHA256——清单如实标注 `rolling`；
 - **基座遮蔽静默失败**：D9 落地前，新增收录仍需人工对照基座 feeds 清单（§2 表即本机制的人工执行）；
 - **Fork 维护成本（§3.5 引入）**：每个 fork = 一条长期同步线（上游发版 → merge → rebase 适配分支 → 复验）；**控制手段**＝改动最小化（能不改就不改，fork 只为承载必要适配）+ 定期同步纪律 + 有价值的改动 PR 回上游；`docs/FORKS.md` 登记同步状态防"忘了同步"。
@@ -252,3 +259,4 @@
 *v0.1.1 2026-10-14 —— 用户提出「quartz 的 feeds 要不要自建软件源」→ 新增 §4.5（apk 软件源分层评估：官方源漂移实测〔kernel 6.12.103 vs 6.12.112 等〕、全量体积实测 ≈3.45 GB/x86_64、`CONFIG_VERSION_REPO`/`CONFIG_FEED_*=m`/签名密钥现状与机制）与 **D10**（阶段 1 自有 feed → 阶段 2 全量并入 WP-9；托管 R2 与运行时资源镜像共用）。*
 *v0.1.2 2026-10-14 —— 用户澄清「对于 bandix 这类软件包想通过 fork 的方式引入源码」→ **新增 §3.5 Fork 引入模型**（fork 到 quartzwrt 组织；`main`=上游镜像 / `quartz` 分支=适配 / 锁 `-quartzN` tag；发布前同步纪律；`docs/FORKS.md` 登记；与 TDD §3.1「不可变上游」的修订关系；与 WP-10「再开发进 quartz」的分工；feed 形态两选）与 **D11**（是否升级为通用策略 + TDD 修订）；§3.1 bandix 引入方式改为 Fork 引入（我们自写薄 Makefile + LuCI 前端 fork 承载适配，**废弃原「vendored 打包目录」**）；§5/§7 同步（W7.2 含 fork 建立）。*
 *v0.1.3 2026-10-14 —— 用户确认（「大致是对的，要改」）并再修订 **fork 范围**：**只 fork `openwrt-bandix` + `luci-app-bandix`**，核心 `timsaya/bandix`（通用 Linux 的 Rust 工具）不 fork、不引入，只消费其 release 预编译二进制（SHA256 固定）；**结构实测**：两 fork 均为"包根形态"（Makefile 位于根下第 1 层）——`scripts/feeds` 扫描深度 5（`update_index` → `SCAN_DEPTH=5`）内有效 → **feed 形态定为 ②（独立 feed 行，锁 commit）**，零复制、上游 Makefile 原样可用（形态 ① 需复刻安装规则、会漂移，不推荐用于本对包）；§3.5 增「fork 范围最小化」纪律；**D11 落地**——TDD §3.1 三大原则 #3/引入方式约定改写 + 新增 **§4.7 受控 Fork 规范** + 术语表「受控 Fork」+ §6 清单「Fork 判定」项（两副本同步；Builder 提交 `336acf5`）；§5 补 feeds.conf.extra/CI 覆盖事项。*
+*v0.1.4 2026-10-14 —— 用户拍板「**还是收录 qmodem 吧，用受控 fork 的方式**」→ **§3.2 重写为收录方案（D6 ✅）** + 可行性实测落地：上游天生 feed 形态（README 即 feed 安装法、无 submodule、浅克隆 16 MB）；包集 = application 17 + luci 9 + driver 7 kmod；**上游 CI 同族验证**（`{x64,arm64}_apk.env` 在 OpenWrt snapshot apk 体系对 x86/64 与 aarch64 编译）；**依赖闭包逐项核对**（基座侧 jq/bc/usbutils/pciutils/umbim/terminfo〔ncurses 子包〕/xxd〔vim 子包〕/kmod-usb-* 全可得；其余在 fork 内）；**feed 可提供 KernelPackage**（scan.mk GREP_STRING 含 KernelPackage + 基座 packages feed `kernel/` 先例；nss 驱动 Kconfig 限定 qualcommax 目标不参与）。**三个必须处理点（实测）**：① `PKG_RELEASE` 在 feeds `--depth 1` 浅克隆下恒为 1（`rev-list --count HEAD .` = 1 实测）→ **fork 固定 release**；② vendor QMI 驱动默认拉起 vs 上游 CI 用 generic → v1 用 generic（seed 项）、vendor 留设备专项；③ 许可证禁商用条款**用户已接受**（随包 LICENSE + FORKS.md/README 标注 + 商用即下架）。§6 验收标准增 W7.8 条目；§7 增 W7.8；§9 风险更新。*
