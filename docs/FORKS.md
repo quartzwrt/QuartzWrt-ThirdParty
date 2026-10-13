@@ -8,7 +8,7 @@ feed 仍只有 `quartz` / `thirdparty` 两条，锁定沿用 thirdparty 的 comm
 
 | 上游 | 本组织 fork | 镜像路径 | 锁定（fork 侧） | 改动摘要 | 上次同步 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [FUjr/QModem](https://github.com/FUjr/QModem) | [quartzwrt/QModem](https://github.com/quartzwrt/QModem) | `qmodem/` | `quartz` @ `9ffada22fd46168f1b82b9b36fe7a68b52dc98cb`（tag `v3.4.0_rc3-quartz1`） | `version.mk` 固定 `PKG_RELEASE`——feeds 对 `^SHA` 锁定走 `--depth 1` 浅克隆，上游基于 git commit-count 的自动 release 在该形态下恒为 1（实测 `git rev-list --count HEAD .` = 1）→ bump 后版本号不变、apk 无法升级；改为固定值，由发布流程手动 bump | 2026-10-14（`9ffada2`） |
+| [FUjr/QModem](https://github.com/FUjr/QModem) | [quartzwrt/QModem](https://github.com/quartzwrt/QModem) | `qmodem/` | `quartz` @ `9ffada22fd46168f1b82b9b36fe7a68b52dc98cb`（tag `v3.4.0_rc3-quartz1`） | `version.mk` 固定 `PKG_RELEASE`——feeds 对 `^SHA` 锁定走 `--depth 1` 浅克隆，上游基于 git commit-count 的自动 release 在该形态下恒为 1（实测 `git rev-list --count HEAD .` = 1）→ bump 后版本号不变、apk 无法升级；改为固定值，由发布流程手动 bump。**注**：`luci-app-qmodem-next` 上游自带硬编码 `PKG_RELEASE:=4`（非 git-count 派生、跨构建稳定），保持原样 | 2026-10-14（`9ffada2`；编译验证：qmodem + luci-app-qmodem-next + 依赖闭包 17 个 apk 产出 ✅） |
 | [timsaya/openwrt-bandix](https://github.com/timsaya/openwrt-bandix) | [quartzwrt/openwrt-bandix](https://github.com/quartzwrt/openwrt-bandix) | `net/bandix/` | `main` @ `c95b03d40b30c31e89c090aaf134750f05bf3f19` | —（纯镜像；后续按需裁剪支持 arch / 二进制下载源） | 2026-10-14（`c95b03d`） |
 | [timsaya/luci-app-bandix](https://github.com/timsaya/luci-app-bandix) | [quartzwrt/luci-app-bandix](https://github.com/quartzwrt/luci-app-bandix) | `net/luci-app-bandix/` | `main` @ `159a6de184b8cbd0694b40f018e737d0a3c82e7e` | —（纯镜像；Quartz 主题/i18n/App 联动适配落地时开 `quartz` 分支） | 2026-10-14（`159a6de`） |
 
