@@ -246,7 +246,7 @@
 
 - **bandix eBPF/BTF 前提**：aarch64（RK3399）未验；上游无源码可复现构建（信任链 = release + hash）；
 - **flow offloading 交互**：基座默认开软件卸载（`flow_offloading 1`）——与 eBPF 统计的兼容性需实测，可能影响 D4/D5；
-- **qmodem 许可证**：MPL-2.0 + 禁商用附加条款——**用户已拍板接受**（收录前提）；须随包携带 LICENSE + `FORKS.md`/README 标注；**QuartzWrt 商业化即须下架**；
+- **qmodem 许可证**：MPL-2.0 + 禁商用附加条款——**用户已拍板接受**（收录前提）；须随包携带 LICENSE + `FORKS.md`/README 标注；**QuartzWrt 商业化即须下架**。**用户评估（2026-10-14）：本项目由 AI 产出、商业化可能性低 → 该约束实际影响有限**；纪律保留（标注/下架条款照记，成本为零）；
 - **qmodem 工程风险（已实测，均有对策）**：① `PKG_RELEASE` 在 feeds 浅克隆下恒为 1 → fork 固定 release；② vendor QMI 驱动默认拉起（上游 CI 用 generic）→ v1 用 generic，vendor 留设备专项；③ 与基座 `kmod-usb-net-qmi-wwan-quectel/-fibocom` 可能产出同名 `.ko` → 不可同装（冲突核查项）；④ qmodem LuCI 页在 quartz 主题下需逐页视觉回归（WP-2 经验：第三方 LuCI 常有 cbi/主题机制缺口）；
 - **滚动资源**（`releases/latest`）无法预固定 SHA256——清单如实标注 `rolling`；
 - **基座遮蔽静默失败**：D9 落地前，新增收录仍需人工对照基座 feeds 清单（§2 表即本机制的人工执行）；
@@ -260,3 +260,4 @@
 *v0.1.2 2026-10-14 —— 用户澄清「对于 bandix 这类软件包想通过 fork 的方式引入源码」→ **新增 §3.5 Fork 引入模型**（fork 到 quartzwrt 组织；`main`=上游镜像 / `quartz` 分支=适配 / 锁 `-quartzN` tag；发布前同步纪律；`docs/FORKS.md` 登记；与 TDD §3.1「不可变上游」的修订关系；与 WP-10「再开发进 quartz」的分工；feed 形态两选）与 **D11**（是否升级为通用策略 + TDD 修订）；§3.1 bandix 引入方式改为 Fork 引入（我们自写薄 Makefile + LuCI 前端 fork 承载适配，**废弃原「vendored 打包目录」**）；§5/§7 同步（W7.2 含 fork 建立）。*
 *v0.1.3 2026-10-14 —— 用户确认（「大致是对的，要改」）并再修订 **fork 范围**：**只 fork `openwrt-bandix` + `luci-app-bandix`**，核心 `timsaya/bandix`（通用 Linux 的 Rust 工具）不 fork、不引入，只消费其 release 预编译二进制（SHA256 固定）；**结构实测**：两 fork 均为"包根形态"（Makefile 位于根下第 1 层）——`scripts/feeds` 扫描深度 5（`update_index` → `SCAN_DEPTH=5`）内有效 → **feed 形态定为 ②（独立 feed 行，锁 commit）**，零复制、上游 Makefile 原样可用（形态 ① 需复刻安装规则、会漂移，不推荐用于本对包）；§3.5 增「fork 范围最小化」纪律；**D11 落地**——TDD §3.1 三大原则 #3/引入方式约定改写 + 新增 **§4.7 受控 Fork 规范** + 术语表「受控 Fork」+ §6 清单「Fork 判定」项（两副本同步；Builder 提交 `336acf5`）；§5 补 feeds.conf.extra/CI 覆盖事项。*
 *v0.1.4 2026-10-14 —— 用户拍板「**还是收录 qmodem 吧，用受控 fork 的方式**」→ **§3.2 重写为收录方案（D6 ✅）** + 可行性实测落地：上游天生 feed 形态（README 即 feed 安装法、无 submodule、浅克隆 16 MB）；包集 = application 17 + luci 9 + driver 7 kmod；**上游 CI 同族验证**（`{x64,arm64}_apk.env` 在 OpenWrt snapshot apk 体系对 x86/64 与 aarch64 编译）；**依赖闭包逐项核对**（基座侧 jq/bc/usbutils/pciutils/umbim/terminfo〔ncurses 子包〕/xxd〔vim 子包〕/kmod-usb-* 全可得；其余在 fork 内）；**feed 可提供 KernelPackage**（scan.mk GREP_STRING 含 KernelPackage + 基座 packages feed `kernel/` 先例；nss 驱动 Kconfig 限定 qualcommax 目标不参与）。**三个必须处理点（实测）**：① `PKG_RELEASE` 在 feeds `--depth 1` 浅克隆下恒为 1（`rev-list --count HEAD .` = 1 实测）→ **fork 固定 release**；② vendor QMI 驱动默认拉起 vs 上游 CI 用 generic → v1 用 generic（seed 项）、vendor 留设备专项；③ 许可证禁商用条款**用户已接受**（随包 LICENSE + FORKS.md/README 标注 + 商用即下架）。§6 验收标准增 W7.8 条目；§7 增 W7.8；§9 风险更新。*
+*v0.1.5 2026-10-14 —— 用户评估「本项目由 AI 产出、商业化可能性低」→ §9 许可证风险条目补记（约束实际影响有限，标注/下架纪律保留）。*
