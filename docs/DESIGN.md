@@ -2,7 +2,7 @@
 
 **版本**: v0.1（讨论稿）
 **日期**: 2026-10-14
-**状态**: 待拍板（§8 共 11 项 D1–D11）
+**状态**: 待拍板（§8 共 11 项 D1–D11；**D11 已确认并落地**——TDD 受控 Fork 规范）
 **依据**: TDD §3.1（双 Feed/不可变上游）、§4.1–4.4（版本锁定/运行时资源）、§5（模式 A/B）、§6（准入清单）；WORKPLAN §3 WP-7
 **基线**: 锁定基座 ImmortalWrt 25.12 @ `ce35a9e4`；本 feed 锁定 `30846b9`（`utils/luci-lib-docker` 唯一收录）
 
@@ -51,18 +51,18 @@
 
 **架构模式**：**模式 A 近亲**——核心 `bandix` 常驻（procd），暴露本地 HTTP API（`127.0.0.1:8686`，uci `bandix.general.port`）；LuCI 经 rpcd 脚本 `luci.bandix` 转译（devices/limits/metrics/connection/dns/quotas 等端点）。App/Dashboard 可经 rpcd 或 daemon 消费，与 Quartz「设备表 / 流量 / 限速」场景吻合。
 
-**引入方式**（D3；**2026-10-14 用户方向修订：Fork 引入**，原「vendored 打包目录」方案废弃——不复制上游文件进本仓库）：
-- **原则**：feed 里的 Makefile **由我们自写**（"薄 Makefile"本义）；**需要改动的源码部分 fork 到 `quartzwrt` 组织承载**（通用纪律见 §3.5）；
-- `net/bandix/`：自写 Makefile——`PKG_SOURCE` = 核心 release tarball（逐 arch `PKG_HASH`；v1 按我们的支持目标裁剪 x86_64/aarch64，后续可扩）；`init/config/keep` **由我们自写**（procd + QuartzWrt 默认值 + 探针联动），零上游文件复制；
-- `net/luci-app-bandix/`：自写 Makefile，`PKG_SOURCE_PROTO:=git` + `PKG_SOURCE_URL` = **`quartzwrt/luci-app-bandix`（fork）**，锁 `v0.12.12-quartzN` tag；需适配时（Quartz 主题对齐/i18n/App 联动/probes 投放）在 fork 上改，改动可见、可 diff、可上游化；
-- 核心 `timsaya/bandix`（Rust+eBPF）**可选 fork**：用途 = 供应链（二进制镜像到我们 fork 的 release，或未来自建 Rust+eBPF 构建）；v1 先锁上游 release + SHA256，供应链登记不变；
-- 升级流程 = 同步上游 → rebase 适配分支 → 打 `-quartzN` tag → bump Makefile 锁定 + 回填 hash → 单包编译 → 全量构建 → VM 复验。
+**引入方式**（D3；**2026-10-14 用户方向修订：Fork 引入**；同日再修订 **fork 范围**——见下）：
+- **fork 范围（用户澄清）**：只 fork **`openwrt-bandix`（打包层）+ `luci-app-bandix`（LuCI 前端）**两个仓库；**核心 `timsaya/bandix` 不 fork、不引入**——它是面向通用 Linux 的 Rust 工具（非 OpenWrt 包），本固件只消费其 **release 预编译二进制**（`openwrt-bandix` 的 Makefile 即从此下载，逐 arch SHA256 固定）；
+- **结构实测（决定 feed 形态）**：两个 fork 仓库均为"包根形态"（`openwrt-bandix/Makefile`、`luci-app-bandix/Makefile` 位于根下第 1 层）——`scripts/feeds` 扫描深度 5 内有效（`update_index` → `SCAN_DEPTH=5`），**因此可直接作为独立 feed 行**（§3.5 形态 ②），零复制且上游 Makefile（含 LuCI 的 `LUCI_*` 定义与安装规则）原样可用；备选形态 ①（thirdparty 薄 Makefile 指 fork）需我们复刻上游安装规则、会漂移，不推荐用于本对包；
+- **fork 内容与改动面**：`openwrt-bandix` fork——按需裁剪 arch（v1 收 x86_64/aarch64）、后续可把二进制下载源改为我们可控镜像；`luci-app-bandix` fork——承载 Quartz 适配（主题对齐/i18n/App 联动/probes 投放）；
+- **锁定**：feed 行锁 `^<commit>`；适配发布打 `vX.Y.Z-quartzN` tag（§3.5 纪律）；
+- 升级流程 = merge 上游 → rebase 适配分支 → 打 tag → bump 锁定 + 回填 hash → 单包编译 → 全量构建 → VM 复验。
 
 **TDD §6 清单核对**：
 - 上游活跃度 ✓（2026-09 仍在发版）；版本锁定 ✓（tag + 逐 arch SHA256）；
 - 依赖冲突：`zoneinfo-all`、`conntrack`、`iw`（基座 packages feed / base tree 均可得）✓；LuCI 侧 `+luci-base +luci-lib-jsonc +curl` ✓；
 - 内核/硬件前提：**eBPF 类插件须核实目标内核与 BTF 支持**（x86_64 与 RK3399/aarch64 双目标，**列为验收项**）；
-- 许可证 Apache-2.0 ✓；供应链审计：**预编译二进制**（来源 = 上游 release，SHA256 固定；无源码可复现构建——登记接受，D3 一并拍板）。
+- 许可证 Apache-2.0 ✓；供应链审计：**预编译二进制**（来源 = 上游 `timsaya/bandix` release，SHA256 固定；无源码可复现构建——登记接受，D3 一并拍板）；
 - 集成注意：上游 README 要求关闭**硬件流量卸载 / Turbo ACC**；基座默认 `firewall.config` 为 `flow_offloading 1`（软件卸载）+ `fullcone 1`，硬件卸载默认未开——软件卸载对 eBPF 统计的实际影响**须 VM 实测**（D4）。
 
 **预装与否**（D5）：bandix 是「设备流量/限速」的 App 联动点，倾向加入 `quartz-defaults` 预装（体积待实测，VM 验收时记录）。
@@ -101,6 +101,7 @@
 **动机**：上游结构不适配薄 Makefile（打包仓库型 / 预编译二进制型 / 多包 feed 型），或需要 QuartzWrt 适配改动（主题对齐 / i18n / App 联动 / 探针投放）时，"复制上游文件进本仓库"会漂移且不可 diff——改为 **fork 承载改动**。
 
 **模型（纪律）**：
+- **fork 范围最小化**：只 fork **OpenWrt 集成所需的仓库**（打包层、LuCI 前端）与**需要适配改动的部分**；上游面向通用 Linux / 其他平台的源码仓库**不 fork、不引入**，只按需消费其发布物（二进制/规则库，SHA256 固定）；
 - **fork 到 `quartzwrt` 组织**，仓库名与上游同名（便于对照与 GitHub fork 网络关系）；
 - **分支纪律**：`main` 保持上游镜像（只做 fast-forward/merge，不放自有提交）；适配改动走 `quartz` 分支，发布打 `vX.Y.Z-quartzN` tag；**feed 锁定我们的 tag/commit**（不用裸分支）；
 - **同步纪律**：上游发版 / 发布前 → merge 上游 → rebase 适配分支 → 重跑单包编译 + VM 复验；有价值的改动尽量 PR 回上游（减少长期分叉）；
@@ -189,7 +190,7 @@
   - ①git 源码型：`PKG_SOURCE_PROTO:=git` + `PKG_SOURCE_VERSION:=<tag>` + `PKG_MIRROR_HASH`（现有 luci-lib-docker 范式）；**需要适配改动时 URL 指向 `quartzwrt` fork（§3.5），锁 `-quartzN` tag**；
   - ②预编译二进制型：per-arch `PKG_SOURCE`/`PKG_HASH`（release URL 固定；bandix 范式——v1 指上游 release，可选迁 fork release）；
 - **升级流程**：TDD §4.3 半自动（maintainer-tools/update_git_source_package.sh）+ ①型（fork）需 merge 上游/rebase 适配分支（§3.5 同步纪律）+ ②型需更新逐 arch hash；单包编译 → 全量构建 → VM 复验；
-- **CI 缺口（D9）**：现有 `check-duplicate-packages.sh` **只查 quartz-vs-thirdparty，不查基座 feed**——而基座遮蔽是「先列者胜」且基座在前，收录基座已有的包会被**静默遮蔽**（坑位 #11 同族）。建议扩展扫描基座 feeds（跨 WP 登记 WP-1）；预装新包时同步在 `check-manifest.sh` 公共断言追加（跨 WP 登记）；
+- **CI 缺口（D9）**：现有 `check-duplicate-packages.sh` **只查 quartz-vs-thirdparty，不查基座 feed**——而基座遮蔽是「先列者胜」且基座在前，收录基座已有的包会被**静默遮蔽**（坑位 #11 同族）。建议扩展扫描基座 feeds（跨 WP 登记 WP-1）；预装新包时同步在 `check-manifest.sh` 公共断言追加（跨 WP 登记）。**形态 ② 落地后**：`config/feeds.conf.extra` 新增 fork feed 行（锁 commit），同名包检查与「锁定 feed 强制重克隆」逻辑需覆盖全部自建 feed（本地 `build-local.sh` + CI，跨 WP 登记 WP-1）；
 - **README 更新**：收录表 + 引入流程 + 清单指针。
 
 ---
@@ -208,7 +209,7 @@
 | 步骤 | 内容 | 依赖 |
 | :--- | :--- | :--- |
 | W7.1 | 设计定案（本文档 → v1.0，D1–D11 拍板） | — |
-| W7.2 | bandix 收录（两包自写 Makefile + 自写 init/config + fork 建立〔如拍板，§3.5〕+ hash 回填 + 单包编译 + probes.d 投放） | D3/D4/D5/D11 |
+| W7.2 | bandix 收录：**建两个 fork**（`quartzwrt/openwrt-bandix` + `quartzwrt/luci-app-bandix`，§3.5 分支纪律）+ `feeds.conf.extra` 增 feed 行（锁 commit）+ hash 回填 + 单包编译 + probes.d 投放 | D3/D4/D5/D11 |
 | W7.3 | 运行时资源清单 v1（MD + JSON + 镜像默认值〔如拍板〕） | D1/D8 |
 | W7.4 | openclash/passwall 版本探针投放（按 D2 归属落地） | D2 |
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
@@ -223,7 +224,7 @@
 | :--- | :--- | :--- |
 | D1 | 运行时资源清单载体与 schema | MD（人读）+ JSON（机读）双轨，§4.2 草案 schema |
 | D2 | 探针描述符/清单/镜像默认值的投放归属 | 新设 `quartz-runtime-resources` 小包（thirdparty）承载三件套；新收录包随包投放 |
-| D3 | bandix 引入方式与预编译二进制信任链 | **Fork 引入（§3.5，2026-10-14 用户方向）**：我们自写薄 Makefile + 需要改动的部分 fork 承载（LuCI 前端 fork；核心可选 fork 作供应链/镜像）；接受预编译二进制（来源明确 + SHA256 固定） |
+| D3 | bandix 引入方式与预编译二进制信任链 | **Fork 引入（§3.5，用户 2026-10-14 确认）**：fork 范围＝**仅 `openwrt-bandix` + `luci-app-bandix`**（核心 `timsaya/bandix` 不 fork——通用 Linux 工具，只消费其 release 二进制 + SHA256）；两 fork 均为包根形态 → **feed 形态 ②（独立 feed 行，锁 commit）**；适配（主题/i18n/App 联动）在 fork 的 `quartz` 分支承载 |
 | D4 | bandix × flow offloading 默认配置策略 | VM 实测后定：若软件卸载影响统计 → 预置关卸载（或文档指引），不默认牺牲转发性能 |
 | D5 | bandix 预装与否（quartz-defaults 追加） | 预装（App 联动点；体积实测后确认） |
 | D6 | qmodem：许可证风险（禁商用）+ 引入方式 | 本 WP 不收录，另立设备专项 WP（方案 C）；如坚持收录走方案 A（独立 feed 行，**fork 后**锁我们 commit，§3.5） |
@@ -231,7 +232,7 @@
 | D8 | 镜像源策略 | v1 文档化 + 默认值投放；自建镜像后置 |
 | D9 | CI 同名包检查扩到基座 feed + 预装包 manifest 断言登记 | 扩展扫描（跨 WP 登记 WP-1） |
 | D10 | **软件源自建（apk feed 发布）路线与托管**（§4.5，用户提出） | 分阶段：阶段 1 发布自有 feed（闭环 #41 + 激活 App 软件包面，`CONFIG_FEED_*=m` 注释死链 + `CONFIG_VERSION_REPO`/`customfeeds.list` 接入）→ 阶段 2 全量发布（WP-9 合流，稳定签名密钥）；托管 Cloudflare R2（与 §4.4 运行时资源镜像共用基建） |
-| D11 | **Fork 引入是否升级为 thirdparty 通用策略**（§3.5，用户方向；含 TDD §3.1「不可变上游」条款修订 + fork 分支/同步纪律 + `docs/FORKS.md` 登记 + feed 形态两选） | 采纳：修订 TDD 为「受控 Fork 规范」（`main`=上游镜像 / `quartz` 分支=适配 / 锁 `-quartzN` tag / 发布前同步）；默认形态 ①（thirdparty 薄 Makefile 指 fork），feed 形态上游（如 qmodem）用形态 ②（独立 feed 行） |
+| D11 | **Fork 引入升级为 thirdparty 通用策略**（§3.5，用户方向；含 TDD §3.1「不可变上游」条款修订 + fork 分支/同步纪律 + `docs/FORKS.md` 登记 + feed 形态两选） | ✅ **用户已确认（2026-10-14「大致是对的，要改」）→ TDD 已修订**：§3.1 三大原则 #3 + 引入方式约定改写、新增 **§4.7 受控 Fork 规范**、术语表增「受控 Fork」、§6 清单增「Fork 判定」（两副本同步；Builder 提交 `336acf5`）。fork 范围最小化（只 fork OpenWrt 集成所需 + 需适配部分）为其中纪律 |
 
 ---
 
@@ -250,3 +251,4 @@
 *v0.1 2026-10-14 —— 首稿（讨论稿）：遮蔽筛查（基座 ce35a9e4 实测）、三候选逐包评估（bandix/qmodem/mosdns）、运行时资源清单设计（与 daemon probes 衔接）、feed 规范与 CI 缺口、验收标准、W7.x 分解、待拍板 9 项。*
 *v0.1.1 2026-10-14 —— 用户提出「quartz 的 feeds 要不要自建软件源」→ 新增 §4.5（apk 软件源分层评估：官方源漂移实测〔kernel 6.12.103 vs 6.12.112 等〕、全量体积实测 ≈3.45 GB/x86_64、`CONFIG_VERSION_REPO`/`CONFIG_FEED_*=m`/签名密钥现状与机制）与 **D10**（阶段 1 自有 feed → 阶段 2 全量并入 WP-9；托管 R2 与运行时资源镜像共用）。*
 *v0.1.2 2026-10-14 —— 用户澄清「对于 bandix 这类软件包想通过 fork 的方式引入源码」→ **新增 §3.5 Fork 引入模型**（fork 到 quartzwrt 组织；`main`=上游镜像 / `quartz` 分支=适配 / 锁 `-quartzN` tag；发布前同步纪律；`docs/FORKS.md` 登记；与 TDD §3.1「不可变上游」的修订关系；与 WP-10「再开发进 quartz」的分工；feed 形态两选）与 **D11**（是否升级为通用策略 + TDD 修订）；§3.1 bandix 引入方式改为 Fork 引入（我们自写薄 Makefile + LuCI 前端 fork 承载适配，**废弃原「vendored 打包目录」**）；§5/§7 同步（W7.2 含 fork 建立）。*
+*v0.1.3 2026-10-14 —— 用户确认（「大致是对的，要改」）并再修订 **fork 范围**：**只 fork `openwrt-bandix` + `luci-app-bandix`**，核心 `timsaya/bandix`（通用 Linux 的 Rust 工具）不 fork、不引入，只消费其 release 预编译二进制（SHA256 固定）；**结构实测**：两 fork 均为"包根形态"（Makefile 位于根下第 1 层）——`scripts/feeds` 扫描深度 5（`update_index` → `SCAN_DEPTH=5`）内有效 → **feed 形态定为 ②（独立 feed 行，锁 commit）**，零复制、上游 Makefile 原样可用（形态 ① 需复刻安装规则、会漂移，不推荐用于本对包）；§3.5 增「fork 范围最小化」纪律；**D11 落地**——TDD §3.1 三大原则 #3/引入方式约定改写 + 新增 **§4.7 受控 Fork 规范** + 术语表「受控 Fork」+ §6 清单「Fork 判定」项（两副本同步；Builder 提交 `336acf5`）；§5 补 feeds.conf.extra/CI 覆盖事项。*
