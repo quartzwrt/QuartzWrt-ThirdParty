@@ -224,7 +224,7 @@
 | W7.4 | openclash/passwall 版本探针投放（按 D2 归属落地） | D2 |
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
 | W7.6 | 文档同步（README / TDD 两副本如涉及 / WORKPLAN） | W7.5 |
-| W7.7 | mosdns LuCI 收录（`luci-app-mosdns` + `geo2txt`）——**镜像已落地**（`net/mosdns-luci/`）；余单包编译 + VM 渲染验收 | D7 ✅ |
+| W7.7 | mosdns LuCI 收录（`luci-app-mosdns` + `geo2txt`）——**镜像已落地 + 单包编译 ✅**（`luci-app-mosdns-1.7.14-r1`、`geo2txt-1.0.0-r1`、基座 `mosdns-5.3.3-r1`）；余 VM 渲染/功能验收 | D7 ✅ |
 | W7.8 | **qmodem 收录**（受控 Fork）：建 `quartzwrt/QModem` fork ✅ → fork 固定 `PKG_RELEASE`（`quartz` 分支 ✅）→ 镜像进本仓库（`qmodem/` ✅）→ 依赖闭包单包编译（qmodem + luci-app-qmodem-next + generic 驱动）→ 全量构建 → VM 安装/渲染验收（quartz 主题逐页） | D6 ✅/D10（**单包编译 ✅**） |
 
 ---
@@ -271,3 +271,4 @@
 *v0.1.8 2026-10-14 —— **D1/D2 拍板（「按推荐来」）→ §8 全部 11 项决策闭环**：D1 = MD+JSON 双轨；D2 = 新设 `quartz-runtime-resources` 小包承载「清单 + 探针描述符」（D8 后不含镜像默认值）。**下一步实施**：推送 ThirdParty + Builder 锁定 bump → 单包编译验证（W7.2 bandix / W7.8 qmodem）。*
 *v0.1.9 2026-10-14 —— **推送闭环 + 单包编译验证通过**：ThirdParty 推送 `30846b9..27754f0`；Builder 推送 `0bf620f..36643f1`（TDD §4.7 `336acf5`/`85a8f05` + **thirdparty 锁定 bump `30846b9`→`27754f08`**）。**编译验证（rockchip/armv8 = aarch64，qmodem 设备架构；构建树接入新 thirdparty：重克隆 + 35 包安装 + `qmodem_INCLUDE_generic-qmi-wwan=y`）**：`bandix-0.12.11-r1.apk`（2.38MB）、`luci-app-bandix-0.12.12-r1.apk`（73KB）、`luci-i18n-bandix-zh-cn`、**qmodem 链 17 个 apk**（qmodem / luci-app-qmodem-next〔上游自带 `PKG_RELEASE:=4`〕/ luci-i18n-qmodem-next-zh-cn / qmodem-smsd / sms-forwarder-next / tom_modem / ubus-at-daemon / modem_scan / sms-tool_q / libqmodem-sms / qmodem-seal / qmodem-settings / quectel-CM-5G-M / ndisc6 等）——**固定 release 适配生效（`3.4.0_rc3-r1`）**；W7.2/W7.8 编译项完成，余 VM 安装/渲染验收与清单成文。*
 *v0.2.0 2026-10-14 —— **W7.7 落地（D7）：`luci-app-mosdns` + `geo2txt` 收录**——上游直取（无 fork）+ 镜像 `net/mosdns-luci/`（tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**（基座已提供 5.3.3，避免同名遮蔽）；同步脚本更名/泛化为 `scripts/sync-mirrors.sh`（支持源子路径与按条目排除，覆盖 fork 与上游直取两类）；登记版本偏差实测项（应用依赖 → 基座 mosdns 5.3.3，上游自带 5.3.4）。*
+*v0.2.1 2026-10-14 —— **W7.7 单包编译验证通过**（rockchip/armv8）：`luci-app-mosdns-1.7.14-r1.apk` + `geo2txt-1.0.0-r1.apk` + 基座 `mosdns-5.3.3-r1.apk`（依赖自动拉起）+ `luci-i18n-mosdns-zh-cn`；推送 ThirdParty `d8a58e7` + Builder `e8e8226`（锁定 bump + TDD §4.7 脚本更名）；余 VM 渲染/功能验收（含 5.3.3↔5.3.4 版本偏差实测）。*

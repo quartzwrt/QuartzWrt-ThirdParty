@@ -34,7 +34,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `luci-lib-docker` | [lisaac/luci-lib-docker](https://github.com/lisaac/luci-lib-docker) | 薄 Makefile | v0.3.4 | 已回填校验和 |
 | `bandix`（+ `luci-app-bandix`） | [timsaya/openwrt-bandix](https://github.com/timsaya/openwrt-bandix) / [timsaya/luci-app-bandix](https://github.com/timsaya/luci-app-bandix) | 受控 Fork + 镜像（`net/bandix/`、`net/luci-app-bandix/`） | fork `main` @ `c95b03d` / `159a6de` | 镜像落地；单包编译验证待做（W7.2） |
-| `luci-app-mosdns` + `geo2txt` | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns) | 上游直取 + 镜像（`net/mosdns-luci/`，排除 `mosdns/`——基座已提供） | tag `v5.3.4-r14` @ `fae49a2` | 镜像落地；单包编译验证待做（W7.7） |
+| `luci-app-mosdns` + `geo2txt` | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns) | 上游直取 + 镜像（`net/mosdns-luci/`，排除 `mosdns/`——基座已提供） | tag `v5.3.4-r14` @ `fae49a2` | 镜像落地 + 单包编译 ✅（余 VM 渲染验收） |
 | `qmodem`（33 包） | [FUjr/QModem](https://github.com/FUjr/QModem) | 受控 Fork + 镜像（`qmodem/`） | fork `quartz` @ `9ffada2`（tag `v3.4.0_rc3-quartz1`） | 镜像落地（含 `PKG_RELEASE` 固定适配）；单包编译验证待做（W7.8） |
 
 > 2026-10-12 移除 `luci-app-openclash`、`luci-app-dockerman`：基座 luci feed 已提供同名包（feeds 先列者胜，本 feed 被遮蔽，且基座版本随基座 commit 锁定），按「基座已提供则不收录」原则删除，由 `quartz-defaults` 直接依赖基座版本。
