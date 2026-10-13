@@ -2,7 +2,7 @@
 
 **版本**: v0.1（讨论稿）
 **日期**: 2026-10-14
-**状态**: 待拍板（§8 共 9 项 D1–D9）
+**状态**: 待拍板（§8 共 10 项 D1–D10）
 **依据**: TDD §3.1（双 Feed/不可变上游）、§4.1–4.4（版本锁定/运行时资源）、§5（模式 A/B）、§6（准入清单）；WORKPLAN §3 WP-7
 **基线**: 锁定基座 ImmortalWrt 25.12 @ `ce35a9e4`；本 feed 锁定 `30846b9`（`utils/luci-lib-docker` 唯一收录）
 
@@ -148,6 +148,23 @@
 - v1（推荐，**不新建镜像基础设施**）：①清单登记「官方源 + 推荐加速前缀」；②由 `quartz-runtime-resources`（或 quartz-defaults）投放 uci-defaults，把 openclash/passwall 下载地址预置为可控镜像优先；③文档声明校验与回退路径；
 - 后置：自建镜像（对象存储/CI 同步 + 校验和索引）——需基建，归 Builder/WP-9 或新 WP。
 
+### 4.5 软件源（apk feed 发布）——分层评估（2026-10-14 实测，用户提出「要不要自建软件源」）
+
+**两层「镜像」区分**：§4.4 管**运行时资源**（插件运行中下载的核心/规则库）；本节管 **apk 软件源**（feeds 发布的包仓库）。技术上独立，但**可共用同一托管基建**。
+
+**现状实测**：
+- 固件 `distfeeds.list` 共 9 条，全部经 `CONFIG_VERSION_REPO`（默认 `https://downloads.immortalwrt.org/releases/25.12-SNAPSHOT`）由 `FeedSourcesAppendAPK` + `VERSION_SED_SCRIPT`（`%U` 替换）生成 → **改 `CONFIG_VERSION_REPO` 一处即可把全部源重定向到自建仓库**（也可用现成的 `customfeeds.list` 追加）；
+- 逐条探测官方源：base/luci/packages/routing/telephony = 200；**quartz/thirdparty = 404（我们从未发布）**；**video = 404（官方也未发）** → 坑位 #41（`apk upgrade` 整体拒绝）的直接成因；
+- **漂移实测（关键）**：官方快照仓库 **旧于** 本锁定基座——kernel `6.12.103` vs `6.12.112`、base-files `1949~1d34e7b8` vs `1954~ce35a9e4`、rpcd `2026.07.19` vs `2026.10.04` → ①基座侧 `apk upgrade` 无物可升（我们更新）；②**kmod 类包依赖精确内核版本，无法安装**；③部分用户态新包依赖解析失败；
+- 体积实测：官方 x86_64 全量 ≈ **3.45 GB**（packages 3.0G / base 326M / telephony 46M / target 34M / luci 23.5M / routing 3M）；自有 feed 增量极小（当前 quartz 6.1 MB + thirdparty 20 KB/构建）；
+- 签名现状：`CONFIG_SIGNED_PACKAGES=y`；构建树自动生成 `private/public-key.pem`（**每个全新构建树一把新钥匙**，固件仅信任自己的 `public-key.pem`）→ **自建源必须配稳定密钥（归 WP-9）**，否则跨版本固件验签失败。
+
+**结论与建议路线（D10）**：
+- **必须做，非可选**：quartz/thirdparty 是产品价值本体（主题/Dashboard/tailscale 适配版/bandix…），不发布 → 坑位 #41 永久存在、**App 软件包管理面（WP-5 W5.7 + WP-6 W6.8 已实现）空转**、按需安装（不预装策略）不可用；
+- **阶段 1（小成本，可即做）**：发布**自有 feed**（quartz+thirdparty，可选 target 包）到自建源；`CONFIG_FEED_quartz/thirdparty/video=m`（`scripts/feeds` 的 tristate 机制：M = 该行注释掉）+ 源地址经 `CONFIG_VERSION_REPO`（全量替换）或 `customfeeds.list`（追加）接入；基座 feed 暂留官方（已知限制：kmod 不可装、基座侧无升级）；
+- **阶段 2（并入 WP-9）**：稳定签名密钥（私钥→CI Secrets、公钥预置）+ **全量发布**（含基座全量包）→ 完全自包含、可复现升级，ASU/OTA 的前提；
+- **托管**：全量 ≈3.45 GB/target（x86_64）+ aarch64（FNet3399）另计 → **Cloudflare R2**（10 GB 免费、零出口费、S3 API 便于 CI 增量同步）优于 GitHub Pages（1 GB 仓库/100 GB 月流量软限，仅够阶段 1）；同一托管可顺带承载 §4.4 运行时资源镜像。
+
 ---
 
 ## 5. feed 结构与工程规范（本 WP 落地）
@@ -198,6 +215,7 @@
 | D7 | luci-app-mosdns（+geo2txt）收录 | P2 候选池，可后置 |
 | D8 | 镜像源策略 | v1 文档化 + 默认值投放；自建镜像后置 |
 | D9 | CI 同名包检查扩到基座 feed + 预装包 manifest 断言登记 | 扩展扫描（跨 WP 登记 WP-1） |
+| D10 | **软件源自建（apk feed 发布）路线与托管**（§4.5，用户提出） | 分阶段：阶段 1 发布自有 feed（闭环 #41 + 激活 App 软件包面，`CONFIG_FEED_*=m` 注释死链 + `CONFIG_VERSION_REPO`/`customfeeds.list` 接入）→ 阶段 2 全量发布（WP-9 合流，稳定签名密钥）；托管 Cloudflare R2（与 §4.4 运行时资源镜像共用基建） |
 
 ---
 
@@ -213,3 +231,4 @@
 
 *变更记录：*
 *v0.1 2026-10-14 —— 首稿（讨论稿）：遮蔽筛查（基座 ce35a9e4 实测）、三候选逐包评估（bandix/qmodem/mosdns）、运行时资源清单设计（与 daemon probes 衔接）、feed 规范与 CI 缺口、验收标准、W7.x 分解、待拍板 9 项。*
+*v0.1.1 2026-10-14 —— 用户提出「quartz 的 feeds 要不要自建软件源」→ 新增 §4.5（apk 软件源分层评估：官方源漂移实测〔kernel 6.12.103 vs 6.12.112 等〕、全量体积实测 ≈3.45 GB/x86_64、`CONFIG_VERSION_REPO`/`CONFIG_FEED_*=m`/签名密钥现状与机制）与 **D10**（阶段 1 自有 feed → 阶段 2 全量并入 WP-9；托管 R2 与运行时资源镜像共用）。*
