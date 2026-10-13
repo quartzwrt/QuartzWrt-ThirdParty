@@ -53,7 +53,7 @@
 
 **引入方式**（D3；**2026-10-14 用户方向修订：Fork 引入**；同日再修订 **fork 范围**——见下）：
 - **fork 范围（用户澄清）**：只 fork **`openwrt-bandix`（打包层）+ `luci-app-bandix`（LuCI 前端）**两个仓库；**核心 `timsaya/bandix` 不 fork、不引入**——它是面向通用 Linux 的 Rust 工具（非 OpenWrt 包），本固件只消费其 **release 预编译二进制**（`openwrt-bandix` 的 Makefile 即从此下载，逐 arch SHA256 固定）；
-- **结构实测（决定 feed 形态）**：两个 fork 仓库均为"包根形态"（`openwrt-bandix/Makefile`、`luci-app-bandix/Makefile` 位于根下第 1 层）——`scripts/feeds` 扫描深度 5 内有效（`update_index` → `SCAN_DEPTH=5`）；**采用形态 ③：整仓镜像进本仓库**（`net/bandix/`、`net/luci-app-bandix/`，`scripts/sync-forks.sh`），feed 仍只有两条、锁定沿用 thirdparty commit（**2026-10-14 用户拍板「放进 quartzwrt-thirdparty」**）；
+- **结构实测（决定 feed 形态）**：两个 fork 仓库均为"包根形态"（`openwrt-bandix/Makefile`、`luci-app-bandix/Makefile` 位于根下第 1 层）——`scripts/feeds` 扫描深度 5 内有效（`update_index` → `SCAN_DEPTH=5`）；**采用形态 ③：整仓镜像进本仓库**（`net/bandix/`、`net/luci-app-bandix/`，`scripts/sync-mirrors.sh`），feed 仍只有两条、锁定沿用 thirdparty commit（**2026-10-14 用户拍板「放进 quartzwrt-thirdparty」**）；
 - **fork 内容与改动面**：`openwrt-bandix` fork——按需裁剪 arch（v1 收 x86_64/aarch64）、后续可把二进制下载源改为我们可控镜像；`luci-app-bandix` fork——承载 Quartz 适配（主题对齐/i18n/App 联动/probes 投放）；
 - **锁定**：feed 行锁 `^<commit>`；适配发布打 `vX.Y.Z-quartzN` tag（§3.5 纪律）；
 - 升级流程 = merge 上游 → rebase 适配分支 → 打 tag → bump 锁定 + 回填 hash → 单包编译 → 全量构建 → VM 复验。
@@ -71,7 +71,7 @@
 
 **上游**：`FUjr/QModem`，436★，活跃（2026-10-10 推送），版本 `3.4.0_rc3`。
 
-**决策（D6 ✅）**：用户拍板「还是收录 qmodem，用受控 fork 的方式」→ **收录方式 = 受控 Fork + 形态 ③（镜像进本仓库）**：`quartzwrt/QModem` fork（`quartz` 分支承载适配）→ `scripts/sync-forks.sh` 镜像到本仓库 `qmodem/` → 常规构建经 thirdparty 锁定自动携带（**无新增 feed 行**）。**可行性已实测（见下）；镜像已落地（2026-10-14）。**
+**决策（D6 ✅）**：用户拍板「还是收录 qmodem，用受控 fork 的方式」→ **收录方式 = 受控 Fork + 形态 ③（镜像进本仓库）**：`quartzwrt/QModem` fork（`quartz` 分支承载适配）→ `scripts/sync-mirrors.sh` 镜像到本仓库 `qmodem/` → 常规构建经 thirdparty 锁定自动携带（**无新增 feed 行**）。**可行性已实测（见下）；镜像已落地（2026-10-14）。**
 
 **可行性核查（2026-10-14，浅克隆 + 基座逐项对照）**：
 - **上游天生 feed 形态**：README 即 `src-git qmodem …` 安装法；仓库根即 `application/` + `luci/` + `driver/` 多包结构（`scripts/feeds` 扫描深度 5 内有效）；**无 submodule**；浅克隆 16 MB；
@@ -87,12 +87,12 @@
 
 **落地边界（跨 WP 登记）**：① 设备侧预装（FNet3399）归 WP-11 的 `devices/` 层（DEVICE_PACKAGES + manifest 断言）；② 不预装则需要 D10 软件源自建才能按需安装（强联动）；③ App/probes 联动面已存在（fork 内带 procd init + rpcd ACL），登记为 seam（probes.d 描述符可随 fork 投放，后置）。
 
-### 3.3 luci-app-mosdns（DNS；补充候选，P2）
+### 3.3 luci-app-mosdns（DNS）——✅ 已收录（D7，2026-10-14）
 
 - 基座已有 **mosdns 5.3.3 核心**（packages feed），**无 LuCI 应用**；
 - 上游 `sbwml/luci-app-mosdns`（GPL-3.0，1853★，活跃 2026-09-13，v1.7.14）含三目录：`luci-app-mosdns` / `mosdns` / `geo2txt`；LuCI 依赖 `+mosdns +uclient-fetch +v2ray-geoip +v2ray-geosite +geo2txt +ucode`（`v2ray-geodata` 在基座提供 geoip/geosite；**`geo2txt` 基座没有**，需一并收录）。
 - 同名包处置：基座已有 `mosdns` → 按规则**只收 LuCI 应用 + geo2txt**，核心依赖解析到基座 5.3.3（版本兼容性须实测）。
-- **倾向**：P2 候选池——Quartz 的 DNS 场景已有 smartdns/adguardhome 在基座，mosdns LuCI 属增强项，可作第二个收录对象或后置（D7）。
+- **落地（2026-10-14）**：上游直取（无 fork）+ 镜像 `net/mosdns-luci/`（tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**（基座已提供 5.3.3——收录同名包会被静默遮蔽，坑位 #11 同族）；仅收 `luci-app-mosdns` + `geo2txt`。**版本偏差**：应用依赖 `+mosdns` 解析到基座 5.3.3（上游仓库自带 5.3.4）——**实测项**（VM 渲染 + 功能核对）。
 
 ### 3.4 明确不收录（防回访）
 
@@ -115,7 +115,7 @@
 - **feed 形态（三选，2026-10-14 用户拍板采用 ③）**：
   - ① thirdparty 内薄 Makefile 指向 fork（需复刻上游安装规则，会漂移——不推荐用于打包仓库型上游）；
   - ② fork 仓库作为独立 feed 行（零复制，但"双 Feed"叙事与 CI 检查需更新）；
-  - ③ **镜像进 `QuartzWrt-ThirdParty`（采用）**——fork 的整仓内容以子目录镜像进本仓库（`scripts/sync-forks.sh`），feed 仍只有 `quartz`/`thirdparty` 两条、锁定沿用 thirdparty commit；fork 保留为**上游跟踪 + `quartz` 适配分支**的改动脉络；台账 `docs/FORKS.md`。
+  - ③ **镜像进 `QuartzWrt-ThirdParty`（采用）**——fork 的整仓内容以子目录镜像进本仓库（`scripts/sync-mirrors.sh`），feed 仍只有 `quartz`/`thirdparty` 两条、锁定沿用 thirdparty commit；fork 保留为**上游跟踪 + `quartz` 适配分支**的改动脉络；台账 `docs/FORKS.md`。
 
 ---
 
@@ -198,7 +198,7 @@
   - ①git 源码型：`PKG_SOURCE_PROTO:=git` + `PKG_SOURCE_VERSION:=<tag>` + `PKG_MIRROR_HASH`（现有 luci-lib-docker 范式）；**需要适配改动时 URL 指向 `quartzwrt` fork（§3.5），锁 `-quartzN` tag**；
   - ②预编译二进制型：per-arch `PKG_SOURCE`/`PKG_HASH`（release URL 固定；bandix 范式——v1 指上游 release，可选迁 fork release）；
 - **升级流程**：TDD §4.3 半自动（maintainer-tools/update_git_source_package.sh）+ ①型（fork）需 merge 上游/rebase 适配分支（§3.5 同步纪律）+ ②型需更新逐 arch hash；单包编译 → 全量构建 → VM 复验；
-- **受控 Fork + 镜像（形态 ③，本项目采用）**：`scripts/sync-forks.sh`（整仓镜像、排除 `.git`；映射表在脚本内）→ 镜像目录（`net/bandix/`、`net/luci-app-bandix/`、`qmodem/`）；台账 `docs/FORKS.md`（fork↔镜像映射、锁定、改动摘要、上次同步、发布前检查单）；**feed 锁定沿用 thirdparty commit（无需新增 feed 行）**；
+- **受控 Fork + 镜像（形态 ③，本项目采用）**：`scripts/sync-mirrors.sh`（整仓镜像、排除 `.git`；映射表在脚本内）→ 镜像目录（`net/bandix/`、`net/luci-app-bandix/`、`qmodem/`）；台账 `docs/FORKS.md`（fork↔镜像映射、锁定、改动摘要、上次同步、发布前检查单）；**feed 锁定沿用 thirdparty commit（无需新增 feed 行）**；
 - **CI 缺口（D9）**：现有 `check-duplicate-packages.sh` **只查 quartz-vs-thirdparty，不查基座 feed**——而基座遮蔽是「先列者胜」且基座在前，收录基座已有的包会被**静默遮蔽**（坑位 #11 同族）。建议扩展扫描基座 feeds（跨 WP 登记 WP-1）；预装新包时同步在 `check-manifest.sh` 公共断言追加（跨 WP 登记）。**镜像形态下**：quartz-vs-thirdparty 检查自动覆盖镜像包（qmodem 33 包名已人工核对与基座零撞名）；**feed 行覆盖问题随形态 ③ 消失**；
 - **README 更新**：收录表 + 引入流程 + 清单指针。
 
@@ -219,12 +219,12 @@
 | 步骤 | 内容 | 依赖 |
 | :--- | :--- | :--- |
 | W7.1 | 设计定案（本文档 → v1.0，D1–D11 拍板） | — |
-| W7.2 | bandix 收录：**建两个 fork**（`quartzwrt/openwrt-bandix` + `quartzwrt/luci-app-bandix`，§3.5 分支纪律）+ **镜像进本仓库**（`scripts/sync-forks.sh` → `net/bandix/`、`net/luci-app-bandix/`）+ hash/依赖核对 + 单包编译 + probes.d 投放 | D3 ✅/D4 ✅/D5 ✅/D11 ✅（**单包编译 ✅**） |
+| W7.2 | bandix 收录：**建两个 fork**（`quartzwrt/openwrt-bandix` + `quartzwrt/luci-app-bandix`，§3.5 分支纪律）+ **镜像进本仓库**（`scripts/sync-mirrors.sh` → `net/bandix/`、`net/luci-app-bandix/`）+ hash/依赖核对 + 单包编译 + probes.d 投放 | D3 ✅/D4 ✅/D5 ✅/D11 ✅（**单包编译 ✅**） |
 | W7.3 | 运行时资源清单 v1（MD + JSON，登记语义〔无镜像承诺，D8〕） | D1/D2 |
 | W7.4 | openclash/passwall 版本探针投放（按 D2 归属落地） | D2 |
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
 | W7.6 | 文档同步（README / TDD 两副本如涉及 / WORKPLAN） | W7.5 |
-| W7.7 | mosdns LuCI 收录（`luci-app-mosdns` + `geo2txt`，薄 Makefile 指上游；D7 ✅） | D7 ✅ |
+| W7.7 | mosdns LuCI 收录（`luci-app-mosdns` + `geo2txt`）——**镜像已落地**（`net/mosdns-luci/`）；余单包编译 + VM 渲染验收 | D7 ✅ |
 | W7.8 | **qmodem 收录**（受控 Fork）：建 `quartzwrt/QModem` fork ✅ → fork 固定 `PKG_RELEASE`（`quartz` 分支 ✅）→ 镜像进本仓库（`qmodem/` ✅）→ 依赖闭包单包编译（qmodem + luci-app-qmodem-next + generic 驱动）→ 全量构建 → VM 安装/渲染验收（quartz 主题逐页） | D6 ✅/D10（**单包编译 ✅**） |
 
 ---
@@ -239,7 +239,7 @@
 | D4 | bandix × flow offloading 默认配置策略 | ✅ **用户拍板（按推荐）**：**保持基座默认**（不牺牲转发性能）+ 文档指引（提示用户如遇统计偏差可关卸载）；VM 实测结果回填本行 |
 | D5 | bandix 预装与否（quartz-defaults 追加） | ✅ **用户拍板（按推荐）**：**预装**（`quartz-defaults` 追加；体积实测后确认，超出预算再回退为按需安装） |
 | D6 | qmodem 收录（许可证风险 + 引入方式） | ✅ **用户拍板（2026-10-14「还是收录 qmodem 吧，用受控 fork」）**：收录 = 受控 Fork + feed 形态 ②（`quartzwrt/QModem` → `feeds.conf.extra` 锁 commit 行）；**接受** MPL-2.0+禁商用约束（商用化即下架）；fork 固定 `PKG_RELEASE`；v1 用 generic QMI 驱动（vendor 驱动留设备专项）；设备预装归 WP-11 |
-| D7 | luci-app-mosdns（+geo2txt）收录 | ✅ **用户拍板（2026-10-14「可以收录」）**：收录（薄 Makefile 指上游，不涉 fork）；只收 `luci-app-mosdns` + `geo2txt`，核心依赖解析到基座 mosdns 5.3.3（版本兼容性实测项） |
+| D7 | luci-app-mosdns（+geo2txt）收录 | ✅ **用户拍板（2026-10-14「可以收录」）→ 已落地**：上游直取 + 镜像（`net/mosdns-luci/`，tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**（基座已提供 5.3.3，收录同名包会被遮蔽）；核心依赖解析到基座 mosdns 5.3.3（**版本偏差实测项**） |
 | D8 | 运行时资源镜像源策略 | ✅ **用户决定（2026-10-14 修订）**：**不做运行时资源镜像**——**openclash 核心由用户自传，我们不提供、不镜像**；GeoIP/规则库等走插件自身下载机制（官方源/加速前缀/自定义 URL 均由用户或插件掌控）；清单职责收缩为**登记 + 版本可见**（探针），不再承担"可控镜像"承诺 |
 | D9 | CI 同名包检查扩到基座 feed + 预装包 manifest 断言登记 | ✅ **用户拍板（按推荐）**：扩查（跨 WP 登记 WP-1）。**形态 ③ 下**：quartz-vs-thirdparty 检查自动覆盖镜像包（qmodem 33 包名已人工核对与基座零撞名）；剩余缺口 = 基座 feed 扫描，随 W7.2/W7.8 落地 |
 | D10 | **软件源自建（apk feed 发布）路线与托管**（§4.5，用户提出） | ✅ **用户拍板（按推荐）**：分阶段：阶段 1 发布自有 feed（闭环 #41 + 激活 App 软件包面，`CONFIG_FEED_*=m` 注释死链 + `CONFIG_VERSION_REPO`/`customfeeds.list` 接入）→ 阶段 2 全量发布（WP-9 合流，稳定签名密钥）；托管 Cloudflare R2。**注**：D8 已修订为不做运行时资源镜像 → 本项只承载 apk 软件源 |
@@ -267,6 +267,7 @@
 *v0.1.4 2026-10-14 —— 用户拍板「**还是收录 qmodem 吧，用受控 fork 的方式**」→ **§3.2 重写为收录方案（D6 ✅）** + 可行性实测落地：上游天生 feed 形态（README 即 feed 安装法、无 submodule、浅克隆 16 MB）；包集 = application 17 + luci 9 + driver 7 kmod；**上游 CI 同族验证**（`{x64,arm64}_apk.env` 在 OpenWrt snapshot apk 体系对 x86/64 与 aarch64 编译）；**依赖闭包逐项核对**（基座侧 jq/bc/usbutils/pciutils/umbim/terminfo〔ncurses 子包〕/xxd〔vim 子包〕/kmod-usb-* 全可得；其余在 fork 内）；**feed 可提供 KernelPackage**（scan.mk GREP_STRING 含 KernelPackage + 基座 packages feed `kernel/` 先例；nss 驱动 Kconfig 限定 qualcommax 目标不参与）。**三个必须处理点（实测）**：① `PKG_RELEASE` 在 feeds `--depth 1` 浅克隆下恒为 1（`rev-list --count HEAD .` = 1 实测）→ **fork 固定 release**；② vendor QMI 驱动默认拉起 vs 上游 CI 用 generic → v1 用 generic（seed 项）、vendor 留设备专项；③ 许可证禁商用条款**用户已接受**（随包 LICENSE + FORKS.md/README 标注 + 商用即下架）。§6 验收标准增 W7.8 条目；§7 增 W7.8；§9 风险更新。*
 *v0.1.5 2026-10-14 —— 用户评估「本项目由 AI 产出、商业化可能性低」→ §9 许可证风险条目补记（约束实际影响有限，标注/下架纪律保留）。*
 *v0.1.6 2026-10-14 —— **用户拍板一批（「d3、d4、d5 按推荐来；openclash 核心不需要我们来提供，用户自己上传即可；d9、d10 也按推荐来，d7 可以收录」）**：**D3 ✅**（接受预编译二进制信任链）/ **D4 ✅**（保持基座默认不牺牲转发性能 + 文档指引，VM 实测回填）/ **D5 ✅**（bandix 预装）/ **D7 ✅**（收录 mosdns LuCI + geo2txt，W7.7 转正）/ **D9 ✅**（CI 扩查）/ **D10 ✅**（软件源自建分阶段 + R2）；**D8 修订为"不做运行时资源镜像"**——openclash 核心用户自传、其余走插件自身下载，清单职责收缩为「登记 + 版本可见」（§4.4 重写；TDD §4.4 表述需按此修订，跨 WP 登记）；§6/§7/§8/§9 同步。**剩 D1/D2 两项待确认**。*
-*v0.1.7 2026-10-14 —— 用户拍板**收录形态 = 「受控 Fork + 镜像进本仓库」（形态 ③）**（「我以为你会放进 quartzwrt-thirdparty 的」→ 确认走镜像）：**已落地**——三个 fork 建立（`quartzwrt/QModem`〔`quartz` 分支固定 `PKG_RELEASE`，tag `v3.4.0_rc3-quartz1`〕、`quartzwrt/openwrt-bandix`、`quartzwrt/luci-app-bandix`）+ `scripts/sync-forks.sh`（整仓镜像、排除 `.git`）+ 镜像目录（`qmodem/`、`net/bandix/`、`net/luci-app-bandix/`，58 个 Makefile 均在 feeds 扫描深度 5 内；qmodem 33 包名人工核对与基座零撞名）+ `docs/FORKS.md` 台账 + README 收录表更新。**feed 仍只有 quartz/thirdparty 两条（锁定沿用 thirdparty commit，无新增 feed 行）**；§3.1/§3.2/§3.5（feed 形态三选、采用 ③）/§5/§7（W7.2/W7.8 落地项）/§8（D9 注）同步。*
+*v0.1.7 2026-10-14 —— 用户拍板**收录形态 = 「受控 Fork + 镜像进本仓库」（形态 ③）**（「我以为你会放进 quartzwrt-thirdparty 的」→ 确认走镜像）：**已落地**——三个 fork 建立（`quartzwrt/QModem`〔`quartz` 分支固定 `PKG_RELEASE`，tag `v3.4.0_rc3-quartz1`〕、`quartzwrt/openwrt-bandix`、`quartzwrt/luci-app-bandix`）+ `scripts/sync-mirrors.sh`（整仓镜像、排除 `.git`）+ 镜像目录（`qmodem/`、`net/bandix/`、`net/luci-app-bandix/`，58 个 Makefile 均在 feeds 扫描深度 5 内；qmodem 33 包名人工核对与基座零撞名）+ `docs/FORKS.md` 台账 + README 收录表更新。**feed 仍只有 quartz/thirdparty 两条（锁定沿用 thirdparty commit，无新增 feed 行）**；§3.1/§3.2/§3.5（feed 形态三选、采用 ③）/§5/§7（W7.2/W7.8 落地项）/§8（D9 注）同步。*
 *v0.1.8 2026-10-14 —— **D1/D2 拍板（「按推荐来」）→ §8 全部 11 项决策闭环**：D1 = MD+JSON 双轨；D2 = 新设 `quartz-runtime-resources` 小包承载「清单 + 探针描述符」（D8 后不含镜像默认值）。**下一步实施**：推送 ThirdParty + Builder 锁定 bump → 单包编译验证（W7.2 bandix / W7.8 qmodem）。*
 *v0.1.9 2026-10-14 —— **推送闭环 + 单包编译验证通过**：ThirdParty 推送 `30846b9..27754f0`；Builder 推送 `0bf620f..36643f1`（TDD §4.7 `336acf5`/`85a8f05` + **thirdparty 锁定 bump `30846b9`→`27754f08`**）。**编译验证（rockchip/armv8 = aarch64，qmodem 设备架构；构建树接入新 thirdparty：重克隆 + 35 包安装 + `qmodem_INCLUDE_generic-qmi-wwan=y`）**：`bandix-0.12.11-r1.apk`（2.38MB）、`luci-app-bandix-0.12.12-r1.apk`（73KB）、`luci-i18n-bandix-zh-cn`、**qmodem 链 17 个 apk**（qmodem / luci-app-qmodem-next〔上游自带 `PKG_RELEASE:=4`〕/ luci-i18n-qmodem-next-zh-cn / qmodem-smsd / sms-forwarder-next / tom_modem / ubus-at-daemon / modem_scan / sms-tool_q / libqmodem-sms / qmodem-seal / qmodem-settings / quectel-CM-5G-M / ndisc6 等）——**固定 release 适配生效（`3.4.0_rc3-r1`）**；W7.2/W7.8 编译项完成，余 VM 安装/渲染验收与清单成文。*
+*v0.2.0 2026-10-14 —— **W7.7 落地（D7）：`luci-app-mosdns` + `geo2txt` 收录**——上游直取（无 fork）+ 镜像 `net/mosdns-luci/`（tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**（基座已提供 5.3.3，避免同名遮蔽）；同步脚本更名/泛化为 `scripts/sync-mirrors.sh`（支持源子路径与按条目排除，覆盖 fork 与上游直取两类）；登记版本偏差实测项（应用依赖 → 基座 mosdns 5.3.3，上游自带 5.3.4）。*
