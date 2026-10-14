@@ -488,7 +488,7 @@ return view.extend({
 					return;
 				}
 				return fs.write('/etc/mosdns/config_custom.yaml', editorContent.trim().replace(/\r\n/g, '\n') + '\n')
-					.then(i => fs.exec('/etc/init.d/mosdns', ['restart']))
+					.then(i => fs.exec('/etc/init.d/mosdns-quartz', ['restart']))
 					.then(() => window.location.reload())
 					.catch(e => {
 						ui.addNotification(null, E('p', _('Unable to save contents: %s').format(e.message)));

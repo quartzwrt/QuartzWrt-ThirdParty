@@ -6,7 +6,7 @@ PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI Support for mosdns
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+mosdns +uclient-fetch +v2ray-geoip +v2ray-geosite +geo2txt +ucode
+LUCI_DEPENDS:=+mosdns-quartz +uclient-fetch +v2ray-geoip +v2ray-geosite +geo2txt +ucode
 
 PKG_MAINTAINER:=sbwml <admin@cooluc.com>
 

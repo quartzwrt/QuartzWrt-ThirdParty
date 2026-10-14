@@ -4,13 +4,13 @@
 		"read": {
 			"file": {
 				"/etc/hosts": [ "read" ],
-				"/etc/init.d/mosdns": [ "exec" ],
+				"/etc/init.d/mosdns-quartz": [ "exec" ],
 				"/etc/mosdns/config_custom.yaml": [ "read" ],
 				"/etc/mosdns/rule/*": [ "read" ],
 				"/tmp/dhcp.leases": [ "read" ],
 				"/tmp/hosts/*": [ "read" ],
 				"/tmp/odhcpd.leases": [ "read" ],
-				"/usr/bin/mosdns": [ "exec" ],
+				"/usr/bin/mosdns-quartz": [ "exec" ],
 				"/usr/share/mosdns/mosdns.uc": [ "exec" ],
 				"/var/log/*": [ "read" ],
 				"/var/mosdns/*": [ "read" ]

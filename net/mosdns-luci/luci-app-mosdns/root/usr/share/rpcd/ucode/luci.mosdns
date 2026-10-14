@@ -280,7 +280,7 @@ const methods = {
 
 	get_version: {
 		call: function() {
-			let res = exec_sys('mosdns version');
+			let res = exec_sys('mosdns-quartz version');
 			if (res.code === 0) {
 				return { version: res.stdout };
 			} else {
