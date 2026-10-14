@@ -14,7 +14,8 @@
 #   - qmodem 取 fork 的 quartz 分支（承载 PKG_RELEASE 固定等适配）
 #   - bandix 两仓暂无适配，取 main（纯镜像）
 #   - mosdns-luci 为上游直取（无 fork）；排除 `mosdns/`——基座 packages feed
-#     已提供 mosdns（5.3.3），收录同名包会被静默遮蔽（坑位 #11 同族）
+#     已提供 mosdns（5.3.3），收录同名包会被静默遮蔽（坑位 #11 同族）；
+#     注意用锚定模式 `/mosdns`（不加前导斜杠会连带排除 view/mosdns/ 等子目录——实测踩坑）
 
 set -euo pipefail
 
@@ -26,7 +27,7 @@ ENTRIES=(
   "bandix|https://github.com/quartzwrt/openwrt-bandix.git|main|.|net/bandix|"
   "luci-app-bandix|https://github.com/quartzwrt/luci-app-bandix.git|main|.|net/luci-app-bandix|"
   "qmodem|https://github.com/quartzwrt/QModem.git|quartz|.|qmodem|"
-  "mosdns-luci|https://github.com/sbwml/luci-app-mosdns.git|v5.3.4-r14|.|net/mosdns-luci|mosdns"
+  "mosdns-luci|https://github.com/sbwml/luci-app-mosdns.git|v5.3.4-r14|.|net/mosdns-luci|/mosdns"
 )
 
 want=("$@")
