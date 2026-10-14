@@ -41,7 +41,7 @@ endef
 
 define Package/mosdns-quartz/install
 	$(call GoPackage/Package/Install/Bin,$(1))
-	$(MV) $(1)/usr/bin/mosdns $(1)/usr/bin/mosdns-quartz
+	mv $(1)/usr/bin/mosdns $(1)/usr/bin/mosdns-quartz
 endef
 
 $(eval $(call GoBinPackage,mosdns-quartz))
