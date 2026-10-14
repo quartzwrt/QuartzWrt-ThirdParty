@@ -3,6 +3,10 @@
 社区优秀第三方插件的收集器。设计规范见 [QuartzWrt-Builder/docs/TDD.md](https://github.com/quartzwrt/QuartzWrt-Builder/blob/main/docs/TDD.md)。
 
 > **WP-7 设计文档**：[`docs/DESIGN.md`](docs/DESIGN.md)（v0.1.6，多数决策已拍板）——遮蔽筛查结果、候选逐包评估（bandix/qmodem/mosdns）、运行时资源清单设计、feed 规范与 CI 缺口、验收标准。
+## 运行时资源清单
+
+[`docs/RUNTIME-RESOURCES.md`](docs/RUNTIME-RESOURCES.md)（人读）+ `utils/quartz-runtime-resources/files/runtime-resources.json`（机读，随包安装）——登记各插件运行时下载项与来源（D8：不做镜像承诺；openclash 内核用户自传）；版本可见性经 `quartz-daemon` 探针（`services.<id>.<field>`）。
+
 > **受控 Fork 台账**：[`docs/FORKS.md`](docs/FORKS.md)——fork↔镜像映射、锁定、改动摘要、同步操作与发布前检查单。
 
 ## 四条铁律
@@ -34,6 +38,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `luci-lib-docker` | [lisaac/luci-lib-docker](https://github.com/lisaac/luci-lib-docker) | 薄 Makefile | v0.3.4 | 已回填校验和 |
 | `bandix`（+ `luci-app-bandix`） | [timsaya/openwrt-bandix](https://github.com/timsaya/openwrt-bandix) / [timsaya/luci-app-bandix](https://github.com/timsaya/luci-app-bandix) | 受控 Fork + 镜像（`net/bandix/`、`net/luci-app-bandix/`） | fork `main` @ `c95b03d` / `159a6de` | 镜像落地；单包编译验证待做（W7.2） |
+| `quartz-runtime-resources` | 本仓库（自研数据包） | 薄 Makefile（数据包，PKGARCH all） | v1.0.0 | 已编译 ✅（清单 + 探针描述符） |
 | `luci-app-mosdns` + `geo2txt` | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns) | 上游直取 + 镜像（`net/mosdns-luci/`，排除 `mosdns/`——基座已提供） | tag `v5.3.4-r14` @ `fae49a2` | 镜像落地 + 单包编译 ✅（余 VM 渲染验收） |
 | `qmodem`（33 包） | [FUjr/QModem](https://github.com/FUjr/QModem) | 受控 Fork + 镜像（`qmodem/`） | fork `quartz` @ `9ffada2`（tag `v3.4.0_rc3-quartz1`） | 镜像落地（含 `PKG_RELEASE` 固定适配）；单包编译验证待做（W7.8） |
 

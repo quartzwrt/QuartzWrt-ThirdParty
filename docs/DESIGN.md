@@ -220,8 +220,8 @@
 | :--- | :--- | :--- |
 | W7.1 | 设计定案（本文档 → v1.0，D1–D11 拍板） | — |
 | W7.2 | bandix 收录：**建两个 fork**（`quartzwrt/openwrt-bandix` + `quartzwrt/luci-app-bandix`，§3.5 分支纪律）+ **镜像进本仓库**（`scripts/sync-mirrors.sh` → `net/bandix/`、`net/luci-app-bandix/`）+ hash/依赖核对 + 单包编译 + probes.d 投放 | D3 ✅/D4 ✅/D5 ✅/D11 ✅（**单包编译 ✅**） |
-| W7.3 | 运行时资源清单 v1（MD + JSON，登记语义〔无镜像承诺，D8〕） | D1/D2 |
-| W7.4 | openclash/passwall 版本探针投放（按 D2 归属落地） | D2 |
+| W7.3 | 运行时资源清单 v1（MD + JSON，登记语义〔无镜像承诺，D8〕）——**✅ 已落地**（`docs/RUNTIME-RESOURCES.md` + 包内 `files/runtime-resources.json`） | D1/D2 ✅ |
+| W7.4 | openclash/passwall 版本探针投放——**✅ 已落地**（`quartz-runtime-resources` 小包投放 passwall/bandix/qmodem/mosdns 描述符；openclash 随 daemon 内置；单包编译 ✅ 2.7KB） | D2 ✅ |
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
 | W7.6 | 文档同步（README / TDD 两副本如涉及 / WORKPLAN） | W7.5 |
 | W7.7 | mosdns LuCI 收录（`luci-app-mosdns` + `geo2txt`）——**镜像已落地 + 单包编译 ✅**（`luci-app-mosdns-1.7.14-r1`、`geo2txt-1.0.0-r1`、基座 `mosdns-5.3.3-r1`）；余 VM 渲染/功能验收 | D7 ✅ |
@@ -272,3 +272,4 @@
 *v0.1.9 2026-10-14 —— **推送闭环 + 单包编译验证通过**：ThirdParty 推送 `30846b9..27754f0`；Builder 推送 `0bf620f..36643f1`（TDD §4.7 `336acf5`/`85a8f05` + **thirdparty 锁定 bump `30846b9`→`27754f08`**）。**编译验证（rockchip/armv8 = aarch64，qmodem 设备架构；构建树接入新 thirdparty：重克隆 + 35 包安装 + `qmodem_INCLUDE_generic-qmi-wwan=y`）**：`bandix-0.12.11-r1.apk`（2.38MB）、`luci-app-bandix-0.12.12-r1.apk`（73KB）、`luci-i18n-bandix-zh-cn`、**qmodem 链 17 个 apk**（qmodem / luci-app-qmodem-next〔上游自带 `PKG_RELEASE:=4`〕/ luci-i18n-qmodem-next-zh-cn / qmodem-smsd / sms-forwarder-next / tom_modem / ubus-at-daemon / modem_scan / sms-tool_q / libqmodem-sms / qmodem-seal / qmodem-settings / quectel-CM-5G-M / ndisc6 等）——**固定 release 适配生效（`3.4.0_rc3-r1`）**；W7.2/W7.8 编译项完成，余 VM 安装/渲染验收与清单成文。*
 *v0.2.0 2026-10-14 —— **W7.7 落地（D7）：`luci-app-mosdns` + `geo2txt` 收录**——上游直取（无 fork）+ 镜像 `net/mosdns-luci/`（tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**（基座已提供 5.3.3，避免同名遮蔽）；同步脚本更名/泛化为 `scripts/sync-mirrors.sh`（支持源子路径与按条目排除，覆盖 fork 与上游直取两类）；登记版本偏差实测项（应用依赖 → 基座 mosdns 5.3.3，上游自带 5.3.4）。*
 *v0.2.1 2026-10-14 —— **W7.7 单包编译验证通过**（rockchip/armv8）：`luci-app-mosdns-1.7.14-r1.apk` + `geo2txt-1.0.0-r1.apk` + 基座 `mosdns-5.3.3-r1.apk`（依赖自动拉起）+ `luci-i18n-mosdns-zh-cn`；推送 ThirdParty `d8a58e7` + Builder `e8e8226`（锁定 bump + TDD §4.7 脚本更名）；余 VM 渲染/功能验收（含 5.3.3↔5.3.4 版本偏差实测）。*
+*v0.2.2 2026-10-14 —— **W7.3/W7.4 落地 + 预装接线 + x86_64 全量构建启动**：①W7.3 清单成文（`docs/RUNTIME-RESOURCES.md` 人读 + `utils/quartz-runtime-resources/files/runtime-resources.json` 机读，D8 登记语义）；②W7.4 `quartz-runtime-resources` 小包（PKGARCH all，DEPENDS `+quartz-daemon`；安装清单 + `probes.d/{passwall,bandix,qmodem,mosdns}.json`；探针 passwall= `/usr/bin/xray -version`、bandix= `/usr/bin/bandix --version`〔实测输出 `bandix 0.12.11`〕、qmodem/mosdns=procd）——单包编译 ✅；③预装接线：`quartz-defaults` 追加 `+bandix +luci-app-bandix +quartz-runtime-resources`（D5/D2），Packages 推送 `7c1009a`；`seed.config` 增 `=m` 构建不预装三项（luci-app-qmodem-next / luci-app-mosdns / `qmodem_INCLUDE_generic-qmi-wwan=y`，Builder `294bb28`）——供 VM 内 apk add 实测与 D10 发布；④锁定 bump：quartz → `7c1009a`、thirdparty → `f971a63`（Builder `5c5a0f0`，已推送）；⑤**x86_64 全量构建启动**（构建树从 rockchip 切回 x86，目标切换 dirclean + 全量编译，后台运行；产物供 W7.5 VM 验收）。*
