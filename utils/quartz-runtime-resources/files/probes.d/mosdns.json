@@ -1,5 +1,8 @@
 {
   "id": "mosdns",
   "title": "mosdns",
-  "running": { "type": "procd", "name": "mosdns" }
+  "running": {
+    "type": "procd",
+    "name": "mosdns-quartz"
+  }
 }

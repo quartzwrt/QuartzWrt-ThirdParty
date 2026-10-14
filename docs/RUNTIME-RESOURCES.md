@@ -38,7 +38,7 @@
 | :--- | :--- |
 | `bandix` | 核心二进制**随包**（构建期自上游 release 下载 + 逐 arch SHA256 固定，见 `docs/FORKS.md`）；无运行时下载。探针：`services.bandix.core`（`/usr/bin/bandix --version`） |
 | `qmodem`（33 包） | 无运行时下载（固件升级文件由用户自备）。探针：`services.qmodem`（procd 运行态） |
-| `luci-app-mosdns` / `geo2txt` | 无运行时下载（规则转换在设备本地执行）。探针：`services.mosdns`（procd 运行态） |
+| `mosdns-quartz` / `luci-app-mosdns` / `geo2txt` | 无运行时下载（规则转换在设备本地执行；核心为受控 Fork 的 `mosdns-quartz` 5.3.4，与基座原版 mosdns 并存）。探针：`services.mosdns`（procd `mosdns-quartz` 运行态） |
 
 ## 4. 维护约定
 
