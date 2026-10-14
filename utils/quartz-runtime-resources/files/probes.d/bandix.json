@@ -1,0 +1,14 @@
+{
+  "id": "bandix",
+  "title": "Bandix",
+  "running": { "type": "procd", "name": "bandix" },
+  "extras": {
+    "core": {
+      "type": "exec",
+      "path": "/usr/bin/bandix",
+      "args": ["--version"],
+      "regex": "bandix ([0-9.]+)",
+      "cache": 300
+    }
+  }
+}

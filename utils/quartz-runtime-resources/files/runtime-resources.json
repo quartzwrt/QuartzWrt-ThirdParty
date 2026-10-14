@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "updated": "2026-10-14",
+  "note": "登记语义（D8，2026-10-14 用户拍板）：QuartzWrt 不提供、不镜像运行时资源——openclash 内核由用户自行上传，其余资源走插件自身下载机制。滚动资源（releases/latest、上游 core 分支）无法预固定 SHA256，如实标注 rolling。版本可见性经 quartz-daemon 的 probes.d 探针暴露为快照字段 services.<id>.<field>（零 daemon 代码改动）。人读版见 docs/RUNTIME-RESOURCES.md。",
+  "plugins": [
+    {
+      "id": "openclash",
+      "title": "OpenClash",
+      "provided_by": "base luci feed（quartz-defaults 预装）",
+      "exposure": { "services_key": "openclash", "core_version_probe": "exec /etc/openclash/clash -v（描述符随 quartz-daemon 内置）" },
+      "resources": [
+        { "kind": "core", "name": "mihomo/clash", "source": "https://raw.githubusercontent.com/vernesong/OpenClash/core/<branch>/clash-<arch>.tar.gz", "version_source": "/etc/openclash/clash -v", "sha256": "rolling", "user_upload": true, "accelerator": "github_address_mod" },
+        { "kind": "core", "name": "mihomo-oix（可选）", "source": "https://github.com/vernesong/mihomo-oix/releases/download/Pre-Alpha/mihomo-<arch>-<level>.gz", "sha256": "rolling", "user_upload": true, "accelerator": "github_address_mod" },
+        { "kind": "geo", "name": "GeoIP.dat", "source": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat", "sha256": "rolling" },
+        { "kind": "geo", "name": "GeoSite.dat", "source": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat", "sha256": "rolling" },
+        { "kind": "geo", "name": "Country.mmdb", "source": "https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/release/lite/Country.mmdb", "sha256": "rolling" },
+        { "kind": "geo", "name": "GeoLite2-ASN.mmdb", "source": "https://github.com/xishang0128/geoip/releases/latest/download/GeoLite2-ASN.mmdb", "sha256": "rolling" }
+      ]
+    },
+    {
+      "id": "passwall",
+      "title": "PassWall",
+      "provided_by": "base luci feed",
+      "exposure": { "services_key": "passwall", "core_version_probe": "exec /usr/bin/xray -version（描述符随 quartz-runtime-resources 投放）" },
+      "resources": [
+        { "kind": "rule", "name": "gfwlist", "source": "https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw.txt", "sha256": "rolling", "customizable": "global_rules.gfwlist_url" },
+        { "kind": "rule", "name": "chnroute", "source": "https://ispip.clang.cn/all_cn.txt", "sha256": "rolling", "customizable": "global_rules.chnroute_url" },
+        { "kind": "rule", "name": "chnroute6", "source": "https://ispip.clang.cn/all_cn_ipv6.txt", "sha256": "rolling", "customizable": "global_rules.chnroute6_url" },
+        { "kind": "rule", "name": "chnlist", "source": "https://fastly.jsdelivr.net/gh/felixonmars/dnsmasq-china-list/{accelerated-domains,apple,google}.china.conf", "sha256": "rolling", "customizable": "global_rules.chnlist_url" },
+        { "kind": "geo", "name": "geoip.dat", "source": "https://github.com/Loyalsoldier/geoip/releases/latest/download/geoip.dat", "sha256": "rolling", "customizable": "global_rules.geoip_url" },
+        { "kind": "geo", "name": "geosite.dat", "source": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat", "sha256": "rolling", "customizable": "global_rules.geosite_url" },
+        { "kind": "core", "name": "xray（构建期打包，非运行时下载）", "source": "base packages feed: xray-core", "version_source": "/usr/bin/xray -version", "sha256": "n/a（随包）" }
+      ]
+    },
+    {
+      "id": "bandix",
+      "title": "Bandix",
+      "provided_by": "thirdparty feed（quartz-defaults 预装）",
+      "exposure": { "services_key": "bandix", "core_version_probe": "exec /usr/bin/bandix --version（描述符随 quartz-runtime-resources 投放）" },
+      "resources": []
+    },
+    {
+      "id": "qmodem",
+      "title": "QModem",
+      "provided_by": "thirdparty feed（按需安装）",
+      "exposure": { "services_key": "qmodem", "running_probe": "procd qmodem_init（描述符随 quartz-runtime-resources 投放）" },
+      "resources": []
+    },
+    {
+      "id": "mosdns",
+      "title": "mosdns",
+      "provided_by": "base packages feed（核心）+ thirdparty（luci-app-mosdns）",
+      "exposure": { "services_key": "mosdns", "running_probe": "procd mosdns（描述符随 quartz-runtime-resources 投放）" },
+      "resources": []
+    }
+  ]
+}

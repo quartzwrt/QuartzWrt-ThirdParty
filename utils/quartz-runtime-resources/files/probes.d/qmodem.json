@@ -1,0 +1,5 @@
+{
+  "id": "qmodem",
+  "title": "QModem",
+  "running": { "type": "procd", "name": "qmodem_init" }
+}

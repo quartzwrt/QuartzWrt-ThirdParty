@@ -1,0 +1,14 @@
+{
+  "id": "passwall",
+  "title": "PassWall",
+  "running": { "type": "procd", "name": "passwall" },
+  "extras": {
+    "core": {
+      "type": "exec",
+      "path": "/usr/bin/xray",
+      "args": ["-version"],
+      "regex": "Xray ([0-9.]+)",
+      "cache": 300
+    }
+  }
+}
