@@ -87,14 +87,14 @@
 
 **落地边界（跨 WP 登记）**：① 设备侧预装（FNet3399）归 WP-11 的 `devices/` 层（DEVICE_PACKAGES + manifest 断言）；② 不预装则需要 D10 软件源自建才能按需安装（强联动）；③ App/probes 联动面已存在（fork 内带 procd init + rpcd ACL），登记为 seam（probes.d 描述符可随 fork 投放，后置）。
 
-### 3.3 luci-app-mosdns（DNS）——已收录但 ⚠ 阻塞（2026-10-14 VM 验收发现，待决）
+### 3.3 luci-app-mosdns（DNS）——✅ 已收录（整套，受控 Fork，2026-10-14）
 
 - 基座已有 **mosdns 5.3.3 核心**（packages feed），**无 LuCI 应用**；
 - 上游 `sbwml/luci-app-mosdns`（GPL-3.0，1853★，活跃 2026-09-13，v1.7.14）含三目录：`luci-app-mosdns` / `mosdns` / `geo2txt`；LuCI 依赖 `+mosdns +uclient-fetch +v2ray-geoip +v2ray-geosite +geo2txt +ucode`（`v2ray-geodata` 在基座提供 geoip/geosite；**`geo2txt` 基座没有**，需一并收录）。
 - 同名包处置：基座已有 `mosdns` → 按规则**只收 LuCI 应用 + geo2txt**，核心依赖解析到基座 5.3.3（版本兼容性须实测）。
 - **落地（2026-10-14）**：上游直取（无 fork）+ 镜像 `net/mosdns-luci/`（tag `v5.3.4-r14` @ `fae49a2`），**排除 `mosdns/`**；仅收 `luci-app-mosdns` + `geo2txt`。
 - **⚠ VM 实测结论（2026-10-14，W7.5）——"只收应用 + 基座核心"不可用**（详见 WORKPLAN 坑位 #45）：① 应用生成器恒输出 `log.size`（其 mosdns 补丁特性）→ 基座原版 5.3.3 拒绝加载；② 双方都带 `/etc/init.d/mosdns` → apk 文件冲突，应用 init 不落地；③ 基座 mosdns 自带默认配置与其自身二进制不兼容（开箱 crash-loop，基座侧问题）。**页面渲染 ✅（镜像修复后）**，但服务起不来。
-- **待用户定（二选一）**：**(A) 撤下 mosdns 收录**（现状装了不能用，撤下最干净）；**(B) 整套收录**——应用 + sbwml 的 mosdns 核心（重命名避让基座同名 + 应用依赖改指 + init 协调；可控 Fork 工作量，发行版内将并存两套 mosdns）。
+- **处置（用户拍板走 B：整套收录）→ 已实施并 VM 验收 ✅**：受控 Fork `quartzwrt/luci-app-mosdns`（`quartz` 分支，tag `v5.3.4-r14-quartz4`）承载改名适配——核心包/二进制/init 全部改 `mosdns-quartz`（目录名同步改，见坑位 #46）、应用依赖改指、6 处引用点同步；与基座原版 `mosdns` 5.3.3 **并存零文件冲突**。**验收**：`apk add luci-app-mosdns` 依赖自动解析整套（geo2txt + mosdns-quartz + 应用）；服务 `mosdns-quartz 5.3.4-r14` 运行；5335 端口 **DNS 查询实测解析成功**；页面 basic/statistics/update 渲染正常；探针 `services.mosdns.running=true`。
 
 ### 3.4 明确不收录（防回访）
 
@@ -226,7 +226,7 @@
 | W7.4 | openclash/passwall 版本探针投放——**✅ 已落地**（`quartz-runtime-resources` 小包投放 passwall/bandix/qmodem/mosdns 描述符；openclash 随 daemon 内置；单包编译 ✅ 2.7KB） | D2 ✅ |
 | W7.5 | 全量构建 + VM 验收（§6 全项） | W7.2–W7.4 |
 | W7.6 | 文档同步（README / TDD 两副本如涉及 / WORKPLAN） | W7.5 |
-| W7.7 | mosdns LuCI 收录——镜像 ✅/编译 ✅/页面渲染 ✅；**服务不可用（⚠ 阻塞，坑位 #45）**，待用户定：撤下 or 整套收录 | D7（待复议） |
+| W7.7 | mosdns LuCI 收录——**✅ 整套收录完成**（受控 Fork 改名适配 + 镜像 + 编译 + VM 全项验收：服务/DNS 查询/页面/探针） | D7 ✅ |
 | W7.8 | **qmodem 收录**（受控 Fork）：建 `quartzwrt/QModem` fork ✅ → fork 固定 `PKG_RELEASE`（`quartz` 分支 ✅）→ 镜像进本仓库（`qmodem/` ✅）→ 依赖闭包单包编译（qmodem + luci-app-qmodem-next + generic 驱动）→ 全量构建 → VM 安装/渲染验收（quartz 主题逐页） | D6 ✅/D10（**单包编译 ✅**） |
 
 ---
@@ -276,3 +276,4 @@
 *v0.2.1 2026-10-14 —— **W7.7 单包编译验证通过**（rockchip/armv8）：`luci-app-mosdns-1.7.14-r1.apk` + `geo2txt-1.0.0-r1.apk` + 基座 `mosdns-5.3.3-r1.apk`（依赖自动拉起）+ `luci-i18n-mosdns-zh-cn`；推送 ThirdParty `d8a58e7` + Builder `e8e8226`（锁定 bump + TDD §4.7 脚本更名）；余 VM 渲染/功能验收（含 5.3.3↔5.3.4 版本偏差实测）。*
 *v0.2.2 2026-10-14 —— **W7.3/W7.4 落地 + 预装接线 + x86_64 全量构建启动**：①W7.3 清单成文（`docs/RUNTIME-RESOURCES.md` 人读 + `utils/quartz-runtime-resources/files/runtime-resources.json` 机读，D8 登记语义）；②W7.4 `quartz-runtime-resources` 小包（PKGARCH all，DEPENDS `+quartz-daemon`；安装清单 + `probes.d/{passwall,bandix,qmodem,mosdns}.json`；探针 passwall= `/usr/bin/xray -version`、bandix= `/usr/bin/bandix --version`〔实测输出 `bandix 0.12.11`〕、qmodem/mosdns=procd）——单包编译 ✅；③预装接线：`quartz-defaults` 追加 `+bandix +luci-app-bandix +quartz-runtime-resources`（D5/D2），Packages 推送 `7c1009a`；`seed.config` 增 `=m` 构建不预装三项（luci-app-qmodem-next / luci-app-mosdns / `qmodem_INCLUDE_generic-qmi-wwan=y`，Builder `294bb28`）——供 VM 内 apk add 实测与 D10 发布；④锁定 bump：quartz → `7c1009a`、thirdparty → `f971a63`（Builder `5c5a0f0`，已推送）；⑤**x86_64 全量构建启动**（构建树从 rockchip 切回 x86，目标切换 dirclean + 全量编译，后台运行；产物供 W7.5 VM 验收）。*
 *v0.2.3 2026-10-14 —— **W7.5 VM 验收记录 + mosdns 阻塞**：x86_64 全量构建 ✅；bandix 全项 ✅（服务/API/4 页真数据〔虚拟客户端 3×50MB = 150.48MB 精确计入〕/探针 `services.bandix.core=0.12.11`）；**flow offloading A/B**（基座默认软+硬卸载均开；软件 flowtable 开/关对 bandix 计数无影响——52.53 vs 52.52 MB）→ D4 依据落地；**本地源 apk add ✅**（D10 阶段 1 机制实测，47 包一次装齐）；qmodem 页 ✅。**mosdns ⚠**：镜像完整性 bug 修复（`--exclude` 锚定，18→42 文件）；但服务不可用——`log.size` 补丁键 + init 文件冲突（+ 基座 mosdns 默认配置自身不兼容）→ §3.3 改为"阻塞待决"（A 撤下 / B 整套收录）。*
+*v0.2.4 2026-10-14 —— **W7.7 阻塞闭环：mosdns 整套收录（用户拍板走 B）实施并 VM 验收 ✅**：受控 Fork `quartzwrt/luci-app-mosdns`（`quartz`，tag `v5.3.4-r14-quartz4`）——核心**目录名+包名+二进制+init 全部改 `mosdns-quartz`**（与基座原版并存零冲突）、应用依赖改指、引用点 6 处同步；镜像 `net/mosdns-luci/`（含核心）；**三个 build-system 陷阱实测并修复**（坑位 #46：`scan.awk` 目录名去重静默丢包 / `PKG_BUILD_DIR` 与 tarball 顶层名不一致致 patches 全失效 / `$(MV)` 未定义被当命令执行）；探针与清单同步指向 `mosdns-quartz`（资源包 r2）。**VM 验收**：依赖自动解析整套、服务运行、5335 DNS 查询实测解析、页面渲染、`services.mosdns.running=true`。*
