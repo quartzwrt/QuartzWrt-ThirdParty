@@ -9,6 +9,10 @@ PKG_VERSION:=5.3.4
 PKG_RELEASE:=14
 
 PKG_SOURCE:=mosdns-$(PKG_VERSION).tar.gz
+# QuartzWrt 受控 Fork：包名改 mosdns-quartz 后，源码 tarball 顶层目录仍为
+# mosdns-$(PKG_VERSION)；OpenWrt 解包按 PKG_BUILD_DIR 的 basename 对位，
+# 必须显式对齐，否则源码解到旁边目录、patches 全部找不到文件（实测）。
+PKG_BUILD_DIR:=$(BUILD_DIR)/mosdns-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=0302a685db2a6c3c09af7bf4ff0dffd24f1e583383a47f064564f5270033671b
 
