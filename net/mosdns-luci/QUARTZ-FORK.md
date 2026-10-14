@@ -14,6 +14,7 @@
 
 | 项 | 上游 | 本 fork（quartz 分支） |
 | :--- | :--- | :--- |
+| 核心**目录名** | `mosdns/` | **`mosdns-quartz/`**——`include/scan.awk` 按**目录名**（`$NF`）去重：feed 包目录与基座包目录同名时**整包被静默丢弃**（实测：仅改 PKG_NAME 时包在 `tmp/.packageinfo` 中消失、`feeds install` 静默跳过；目录同名即中招，与 PKG_NAME 无关） |
 | 核心包名 | `mosdns` | **`mosdns-quartz`**（`PKG_SOURCE` 显式写 `mosdns-$(PKG_VERSION).tar.gz`） |
 | 核心二进制 | `/usr/bin/mosdns` | **`/usr/bin/mosdns-quartz`**（install 规则 `GoPackage/Package/Install/Bin` 后 `mv`） |
 | 服务 init | `/etc/init.d/mosdns` | **`/etc/init.d/mosdns-quartz`**（`PROG` 同步） |
