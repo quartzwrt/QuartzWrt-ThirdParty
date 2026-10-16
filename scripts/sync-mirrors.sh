@@ -15,6 +15,9 @@
 #   - bandix 两仓暂无适配，取 main（纯镜像）
 #   - mosdns-luci 取受控 fork 的 quartz 分支（整套改名适配：核心 mosdns→mosdns-quartz、
 #     二进制/init 同步避让，与基座原版 mosdns 并存零冲突；见 docs/FORKS.md 与坑位 #45）
+#   - fancontrol 上游直取（JiaY-shi，无适配需求）：一仓两包（fancontrol 守护进程 +
+#     luci-app-fancontrol 配置页），锁 tag v2.1.0——与 vendor 镜像内同名包同作者线的
+#     演进版；设备侧调速参数走 devices/ 的 uci-defaults，不动包本身（FORKS.md 有登记）
 
 set -euo pipefail
 
@@ -27,6 +30,7 @@ ENTRIES=(
   "luci-app-bandix|https://github.com/quartzwrt/luci-app-bandix.git|main|.|net/luci-app-bandix|"
   "qmodem|https://github.com/quartzwrt/QModem.git|quartz|.|qmodem|"
   "mosdns-luci|https://github.com/quartzwrt/luci-app-mosdns.git|quartz|.|net/mosdns-luci|"
+  "fancontrol|https://github.com/JiaY-shi/fancontrol.git|v2.1.0|.|utils/fancontrol|"
 )
 
 want=("$@")

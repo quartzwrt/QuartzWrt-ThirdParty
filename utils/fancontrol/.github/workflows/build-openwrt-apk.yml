@@ -1,0 +1,223 @@
+name: Build OpenWrt APK packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: Architecture to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - x86_64
+          - aarch64_generic
+          - aarch64_cortex-a53
+          - arm_cortex-a7_neon-vfpv4
+          - mips_24kc
+          - mipsel_24kc
+      release_tag:
+        description: Release tag (leave empty to use the package version)
+        required: false
+        type: string
+      prerelease:
+        description: Mark a newly created release as a prerelease
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openwrt-apk-${{ github.ref }}-${{ inputs.architecture }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      architectures: ${{ steps.matrix.outputs.architectures }}
+      release_tag: ${{ steps.release.outputs.release_tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select architectures
+        id: matrix
+        shell: bash
+        env:
+          SELECTED_ARCH: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+
+          case "$SELECTED_ARCH" in
+            all)
+              architectures='["x86_64","aarch64_generic","aarch64_cortex-a53","arm_cortex-a7_neon-vfpv4","mips_24kc","mipsel_24kc"]'
+              ;;
+            x86_64|aarch64_generic|aarch64_cortex-a53|arm_cortex-a7_neon-vfpv4|mips_24kc|mipsel_24kc)
+              architectures="[\"$SELECTED_ARCH\"]"
+              ;;
+            *)
+              echo "Unsupported architecture: $SELECTED_ARCH" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "architectures=$architectures" >> "$GITHUB_OUTPUT"
+
+      - name: Select release tag
+        id: release
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          release_tag="$REQUESTED_TAG"
+          if [ -z "$release_tag" ]; then
+            package_version="$(sed -n 's/^PKG_VERSION:=//p' fancontrol/Makefile)"
+            if [ -z "$package_version" ]; then
+              echo "Unable to read PKG_VERSION from fancontrol/Makefile" >&2
+              exit 1
+            fi
+            release_tag="v$package_version"
+          fi
+
+          case "$release_tag" in
+            *[!A-Za-z0-9._-]*|'')
+              echo "Invalid release tag: $release_tag" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.architecture }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: ${{ fromJSON(needs.prepare.outputs.architectures) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare artifact directory
+        shell: bash
+        run: mkdir -p "${{ github.workspace }}/artifacts/${{ matrix.architecture }}"
+
+      - name: Build packages with the OpenWrt SDK
+        uses: openwrt/gh-action-sdk@v11
+        env:
+          ARCH: ${{ matrix.architecture }}-master
+          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ matrix.architecture }}
+          FEED_DIR: ${{ github.workspace }}
+          FEEDNAME: fancontrol
+          BUILD_LOG: 1
+          V: s
+
+      - name: Prepare release APK packages
+        shell: bash
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/artifacts/${{ matrix.architecture }}
+          RELEASE_DIR: ${{ github.workspace }}/release/${{ matrix.architecture }}
+          PACKAGE_ARCH: ${{ matrix.architecture }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RELEASE_DIR"
+
+          for package in \
+            fancontrol \
+            luci-app-fancontrol \
+            luci-i18n-fancontrol-zh-cn; do
+            match="$(find "$OUTPUT_DIR" -type f -name "$package-*.apk" -print -quit)"
+            if [ -z "$match" ]; then
+              echo "Expected package was not built: $package" >&2
+              exit 1
+            fi
+
+            cp "$match" "$RELEASE_DIR/$package-$PACKAGE_ARCH.apk"
+          done
+
+          find "$RELEASE_DIR" -type f -name '*.apk' -print | sort
+
+      - name: Stage APK packages for release
+        uses: actions/upload-artifact@v4
+        with:
+          name: fancontrol-release-${{ matrix.architecture }}
+          path: ${{ github.workspace }}/release/${{ matrix.architecture }}/*.apk
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload failed build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fancontrol-build-logs-${{ matrix.architecture }}
+          path: ${{ github.workspace }}/artifacts/${{ matrix.architecture }}/logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+  release:
+    name: Publish GitHub release
+    needs:
+      - prepare
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download built APK packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: fancontrol-release-*
+          path: ${{ github.workspace }}/release-assets
+          merge-multiple: true
+
+      - name: Create release and upload APK packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' assets < <(find "$GITHUB_WORKSPACE/release-assets" \
+            -maxdepth 1 -type f -name '*.apk' -print0 | sort -z)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No APK packages are available for release" >&2
+            exit 1
+          fi
+
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            create_args=(
+              "$RELEASE_TAG"
+              --repo "$GITHUB_REPOSITORY"
+              --target "$GITHUB_SHA"
+              --title "Fan Control $RELEASE_TAG"
+              --notes-file "$GITHUB_WORKSPACE/.github/release-notes.md"
+            )
+            if [ "$PRERELEASE" = "true" ]; then
+              create_args+=(--prerelease)
+            fi
+            gh release create "${create_args[@]}"
+          else
+            gh release edit "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Fan Control $RELEASE_TAG" \
+              --notes-file "$GITHUB_WORKSPACE/.github/release-notes.md"
+          fi
+
+          gh release upload "$RELEASE_TAG" "${assets[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber

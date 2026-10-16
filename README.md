@@ -41,5 +41,6 @@
 | `quartz-runtime-resources` | 本仓库（自研数据包） | 薄 Makefile（数据包，PKGARCH all） | v1.0.0 | 已编译 ✅（清单 + 探针描述符） |
 | `luci-app-mosdns` + `geo2txt` | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns) | 上游直取 + 镜像（`net/mosdns-luci/`，排除 `mosdns/`——基座已提供） | tag `v5.3.4-r14` @ `fae49a2` | 镜像落地 + 单包编译 ✅（余 VM 渲染验收） |
 | `qmodem`（33 包） | [FUjr/QModem](https://github.com/FUjr/QModem) | 受控 Fork + 镜像（`qmodem/`） | fork `quartz` @ `9ffada2`（tag `v3.4.0_rc3-quartz1`） | 镜像落地（含 `PKG_RELEASE` 固定适配）；单包编译验证待做（W7.8） |
+| `fancontrol` + `luci-app-fancontrol` | [JiaY-shi/fancontrol](https://github.com/JiaY-shi/fancontrol) | 上游直取 + 镜像（`utils/fancontrol/`，一仓两包） | tag `v2.1.0` @ `bdd7293` | 镜像落地；设备（FNet3399）预装 + 调速曲线走 Builder `devices/` 层 |
 
 > 2026-10-12 移除 `luci-app-openclash`、`luci-app-dockerman`：基座 luci feed 已提供同名包（feeds 先列者胜，本 feed 被遮蔽，且基座版本随基座 commit 锁定），按「基座已提供则不收录」原则删除，由 `quartz-defaults` 直接依赖基座版本。
