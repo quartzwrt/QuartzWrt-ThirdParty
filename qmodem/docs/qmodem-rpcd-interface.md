@@ -55,6 +55,13 @@ Get AT command configuration and available ports.
 ubus call qmodem get_at_cfg '{"config_section":"modem1"}'
 ```
 
+**QuartzWrt 适配（quartz 分支）**：可选参数 `lang`（`zh` | `en`）——显式指定预置命令
+（`cmds`）的**标签语言**，用于 App 按自身界面语言请求（避免与路由器 LuCI 语言不一致）；
+缺省（不传）时行为与上游一致（取 `luci.main.lang`）。
+```bash
+ubus call qmodem get_at_cfg '{"config_section":"modem1","lang":"zh"}'
+```
+
 #### get_copyright
 Get copyright information.
 ```bash

@@ -146,8 +146,23 @@ get_at_cfg() {
     json_add_string using_port "$at_port"
     json_add_array cmds
     
-    # Determine language and select appropriate AT commands file
-    lang=$(uci get luci.main.lang 2>/dev/null || echo "en")
+    # Determine language and select appropriate AT commands file.
+    # QuartzWrt 适配（quartz 分支，v3.4.0_rc3-quartz2）：支持可选的显式 `lang`
+    # 参数——App（经 quartz-app-api 的 qmodem.at_cfg 条目）按**自身界面语言**请求
+    # 预置命令名，避免"中文 App + 英文路由器界面"时拿到英文命令名。缺省行为不变
+    # （仍取路由器 luci.main.lang），故对网页端与既有调用方完全透明。
+    req_lang=$(echo "$input" | jsonfilter -e '@.lang' 2>/dev/null)
+    case "$req_lang" in
+        zh|zh-cn|zh-CN|zh_CN|zh-Hans|zh-Hant|cn)
+            lang="zh"
+            ;;
+        en)
+            lang="en"
+            ;;
+        *)
+            lang=$(uci get luci.main.lang 2>/dev/null || echo "en")
+            ;;
+    esac
     case "$lang" in
         zh*|cn|auto)
             at_commands_file="/usr/share/qmodem/at_commands_zh.json"
@@ -526,7 +541,8 @@ case "$1" in
         "params": "object"
     },
     "get_at_cfg": {
-        "config_section": "string"
+        "config_section": "string",
+        "lang": "string"
     },
     "get_copyright": {
         "config_section": "string"
