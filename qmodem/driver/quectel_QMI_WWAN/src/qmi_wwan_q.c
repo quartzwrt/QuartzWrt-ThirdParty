@@ -1807,8 +1807,9 @@ static void qmap_packet_decode(sQmiWwanQmap *pQmapDev,
 			goto skip_pkt;
 		}
 
-		if (skb_len > qmap_net->mtu) {
-			dev_info(dev, "drop skb_len=%x larger than mtu=%d\n", skb_len, qmap_net->mtu);
+		if (skb_len > pQmapDev->mpNetDev->net->mtu) {
+			dev_info(dev, "drop skb_len=%x larger than link mtu=%d (qmap mtu=%d)\n",
+				 skb_len, pQmapDev->mpNetDev->net->mtu, qmap_net->mtu);
 			goto error_pkt;
 		}
 
