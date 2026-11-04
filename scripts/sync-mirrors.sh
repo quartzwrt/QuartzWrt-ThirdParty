@@ -18,6 +18,10 @@
 #   - fancontrol 上游直取（JiaY-shi，无适配需求）：一仓两包（fancontrol 守护进程 +
 #     luci-app-fancontrol 配置页），锁 tag v2.1.0——与 vendor 镜像内同名包同作者线的
 #     演进版；设备侧调速参数走 devices/ 的 uci-defaults，不动包本身（FORKS.md 有登记）
+#   - lucky/luci-app-lucky 上游直取（gdy666，一仓两包）；发布锁定以 docs/FORKS.md
+#     记录的 commit 为准，跑本脚本会取 main 最新，review diff 后再更新台账
+#   - op-packages（KWRT 源集合，~335MB）不纳入全量 clone；新收录包按目录镜像
+#     （GitHub API / tarball），锁定记录见 docs/FORKS.md
 
 set -euo pipefail
 
@@ -31,6 +35,8 @@ ENTRIES=(
   "qmodem|https://github.com/quartzwrt/QModem.git|quartz|.|qmodem|"
   "mosdns-luci|https://github.com/quartzwrt/luci-app-mosdns.git|quartz|.|net/mosdns-luci|"
   "fancontrol|https://github.com/JiaY-shi/fancontrol.git|v2.1.0|.|utils/fancontrol|"
+  "lucky|https://github.com/gdy666/luci-app-lucky.git|main|lucky|net/lucky|"
+  "luci-app-lucky|https://github.com/gdy666/luci-app-lucky.git|main|luci-app-lucky|net/luci-app-lucky|"
 )
 
 want=("$@")

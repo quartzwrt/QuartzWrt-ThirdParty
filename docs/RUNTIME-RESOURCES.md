@@ -39,8 +39,16 @@
 | `bandix` | 核心二进制**随包**（构建期自上游 release 下载 + 逐 arch SHA256 固定，见 `docs/FORKS.md`）；无运行时下载。探针：`services.bandix.core`（`/usr/bin/bandix --version`） |
 | `qmodem`（33 包） | 无运行时下载（固件升级文件由用户自备）。探针：`services.qmodem`（procd 运行态） |
 | `mosdns-quartz` / `luci-app-mosdns` / `geo2txt` | 无运行时下载（规则转换在设备本地执行；核心为受控 Fork 的 `mosdns-quartz` 5.3.4，与基座原版 mosdns 并存）。探针：`services.mosdns`（procd `mosdns-quartz` 运行态） |
+| `lucky` / `luci-app-lucky` | 核心 `2.27.2` 为**构建期预编译二进制**（逐 arch SHA256 固定，见 `docs/FORKS.md`）；无运行时下载。 |
+| `luci-app-ttl` | 无运行时下载（nft/iptables 规则在设备本地生成）。 |
 
-## 4. 维护约定
+## 4. 本 feed 收录包（有运行时下载）
+
+| 包 | 资源 | 来源（默认） | 版本读取 | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+| `easytier` / `luci-app-easytier` | core / cli / web 二进制（在线更新与缺失补装） | `api.github.com/repos/EasyTier/EasyTier/releases/latest` → `releases/download/<tag>/easytier-linux-<arch>-<tag>.zip`；可用 UCI `easytier.@easytier[0].github_proxys` 配置 GitHub 加速前缀 | `easytier-core -h` / procd 运行态 | **rolling**；包内已带 `v2.7.0`，fallback 版本 `v2.7.0`；仅 x86_64/aarch64 |
+
+## 5. 维护约定
 
 - **新增收录包**：若其存在运行时下载，必须在本清单登记（来源 / 版本读取 / 是否 rolling）；
 - **版本可见**：能读版本的资源，随 `quartz-runtime-resources` 投放 `probes.d` 描述符（或由包自身投放），快照字段 `services.<id>.<field>` 自动出现在 Dashboard / App；

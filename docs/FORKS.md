@@ -14,6 +14,9 @@ feed 仍只有 `quartz` / `thirdparty` 两条，锁定沿用 thirdparty 的 comm
 | [timsaya/luci-app-bandix](https://github.com/timsaya/luci-app-bandix)（fork：[quartzwrt/luci-app-bandix](https://github.com/quartzwrt/luci-app-bandix)） | 受控 Fork | `net/luci-app-bandix/` | fork `main` @ `159a6de184b8cbd0694b40f018e737d0a3c82e7e` | —（纯镜像；Quartz 主题/i18n/App 联动适配落地时开 `quartz` 分支） | 2026-10-14（`159a6de`；编译验证：`luci-app-bandix-0.12.12-r1.apk` ✅） |
 | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns)（fork：[quartzwrt/luci-app-mosdns](https://github.com/quartzwrt/luci-app-mosdns)） | 受控 Fork（**整套收录**：应用 + 核心 + geo2txt） | `net/mosdns-luci/` | fork `quartz` @ `93fd87dafa7302e2ddf4c8576b932e257feca208`（tag `v5.3.4-r14-quartz4`；基线上游 `fae49a2`） | **整套改名适配（与基座原版 mosdns 并存零冲突；坑位 #45）**：核心包 `mosdns`→**`mosdns-quartz`**（`PKG_SOURCE` 显式 `mosdns-$(PKG_VERSION).tar.gz`）、二进制 `/usr/bin/mosdns`→`mosdns-quartz`、init `/etc/init.d/mosdns`→`mosdns-quartz`、应用依赖 `+mosdns`→`+mosdns-quartz`；引用点 6 处同步（hotplug/ucitrack/acl.d×2/basic.js/rpcd ucode `mosdns version`）；uci 文件、`/etc/mosdns/`、`/var/etc/mosdns.json`、rpcd 对象名保持不变。详见 fork 内 `QUARTZ-FORK.md` | 2026-10-14（`quartz4`；**VM 验收 ✅**：`apk add luci-app-mosdns` 自动解析整套、服务 `mosdns-quartz 5.3.4-r14` 运行、5335 端口 DNS 查询实测解析、页面〔basic/statistics/update〕渲染、探针 `services.mosdns.running=true`） |
 | [JiaY-shi/fancontrol](https://github.com/JiaY-shi/fancontrol) | 上游直取 | `utils/fancontrol/` | tag `v2.1.0` @ `bdd72939b50a483333a6928f37bddce31259c002` | —（纯镜像；**一仓两包**：`fancontrol/` 守护进程〔hwmon PWM 连续调速，`auto` 自动发现 CPU/SoC 热区与 `pwmfan` hwmon，规避 hwmon 序号漂移〕+ `luci-app-fancontrol/` 配置页）。**来源说明**：vendor FNet3399 成品镜像内同名两包出自同作者旧版线（`fancontrol` 1-r3 / `luci-app-fancontrol` 1.0-r1，维护者 JiaY-shi；LuCI 侧 menu/acl 与 rockjake 分支逐字节同源），本条目取作者 2.x 演进版；设备侧调速曲线走 Builder `devices/erya_fnet-3399/` 的 uci-defaults，**不改包本身**（无适配需求故不建 fork） | 2026-10-16（`bdd7293`，tag `v2.1.0`；编译验证见 Builder `devices/erya_fnet-3399/README.md`） |
+| [gdy666/luci-app-lucky](https://github.com/gdy666/luci-app-lucky) | 上游直取 | `net/lucky/`、`net/luci-app-lucky/` | commit `69305fef127259892ba4603e98f730f0330e5caa`（core `2.27.2-r3`、app `3.0.0-r28`） | **core 为预编译二进制**（上游只发二进制）：`lucky_2.27.2_Linux_{arm64,x86_64}.tar.gz`，逐架构 SHA256 固定；仅承诺 x86_64/aarch64；安装上游 `LICENSE` 到 `/usr/share/licenses/lucky/`。app 增 `+luci-compat`（Lua 控制器/视图）与 `PKG_PO_VERSION`。 | 2026-10-21（单包编译 ✅：`lucky-2.27.2-r3.apk`、`luci-app-lucky-3.0.0-r28.apk`） |
+| [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（KWRT 源集合） | 上游直取 | `net/luci-app-ttl/` | op-packages commit `6a9f4a92f2849518ae08b57c7516639d294e5124`（`luci-app-ttl` `0.0.7-r6`） | 纯 LuCI 镜像；补 `PKG_PO_VERSION`（避免 i18n 包版本为 0）。 | 2026-10-21（单包编译 ✅） |
+| [EasyTier/EasyTier](https://github.com/EasyTier/EasyTier) + [kiddin9/op-packages](https://github.com/kiddin9/op-packages) | 预编译二进制 + 上游直取 | `net/easytier/`、`net/luci-app-easytier/` | core `v2.7.0`（aarch64 `8abc5d850ad140cd071475a2dd2b4b135f7e0e8b7271897f01fc08a5c0a9c1b0`、x86_64 `442238912065537c280869089217303e3d2813e9c5d2a6b14deaf25667065aa2`）；app `2.7.0-r15` @ `6a9f4a9` | **backend 重写**为 `PKG_SOURCE` + `PKG_SOURCE_URL` + 逐架构 `PKG_HASH`（原 op-packages 用 `PKG_HASH:=skip` + `wget`，不满足本 feed 校验要求）；仅 x86_64/aarch64；`unzip -j` 取平铺二进制；安装 LGPL-3.0 文本。app 原样镜像（运行期在线更新走 GitHub release）。 | 2026-10-21（单包编译 ✅） |
 
 **同步操作**：
 
@@ -22,6 +25,8 @@ scripts/sync-mirrors.sh                # 全量同步（或指定名称，如 mo
 git diff --stat                        # ① review
 # ② 更新本表「上次同步」与锁定；③ 提交
 ```
+
+> **op-packages（KWRT 源集合，~335 MB）不纳入 `sync-mirrors.sh` 的全量 clone**：新收录包按目录镜像（GitHub API / tarball），锁定沿用上表记录的 commit；`lucky`/`luci-app-lucky` 已加入脚本（小仓库，取 `main`，同步后回写锁定）。
 
 **上游 → fork 镜像（main）与适配分支跟进**（仅受控 Fork 条目）：
 

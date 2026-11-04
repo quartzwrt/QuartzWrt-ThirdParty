@@ -1,0 +1,19 @@
+#
+# Copyright (C) 2008-2014 The LuCI Team <luci@lists.subsignal.org>
+#
+# This is free software, licensed under the Apache License, Version 2.0 .
+#
+
+include $(TOPDIR)/rules.mk
+
+LUCI_TITLE:=Antitethering module for luci-app-firewall
+#LUCI_DEPENDS:= +luci-app-firewall
+
+PKG_LICENSE:=Apache-2.0
+PKG_VERSION:=0.0.7
+PKG_RELEASE:=6
+PKG_PO_VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
+
+include $(TOPDIR)/feeds/luci/luci.mk
+
+# call BuildPackage - OpenWrt buildroot signature

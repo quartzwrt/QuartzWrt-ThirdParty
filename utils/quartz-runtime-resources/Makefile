@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=quartz-runtime-resources
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=QuartzWrt ThirdParty Feed <https://github.com/quartzwrt/QuartzWrt-ThirdParty>
@@ -28,7 +28,8 @@ endef
 
 define Package/quartz-runtime-resources/description
   运行时资源清单（登记语义，TDD §4.4 / WP-7 D8）与 quartz-daemon 探针描述符：
-  passwall / bandix / qmodem / mosdns（openclash 的描述符随 quartz-daemon 内置）。
+  passwall / bandix / qmodem / mosdns（openclash 的描述符随 quartz-daemon 内置）；
+  2026-10-21 扩包后清单增补 lucky / easytier / ttl。
 endef
 
 define Build/Compile

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-14",
+  "updated": "2026-10-21",
   "note": "登记语义（D8，2026-10-14 用户拍板）：QuartzWrt 不提供、不镜像运行时资源——openclash 内核由用户自行上传，其余资源走插件自身下载机制。滚动资源（releases/latest、上游 core 分支）无法预固定 SHA256，如实标注 rolling。版本可见性经 quartz-daemon 的 probes.d 探针暴露为快照字段 services.<id>.<field>（零 daemon 代码改动）。人读版见 docs/RUNTIME-RESOURCES.md。",
   "plugins": [
     {
@@ -143,6 +143,34 @@
         "services_key": "mosdns",
         "running_probe": "procd mosdns-quartz（描述符随 quartz-runtime-resources 投放）"
       },
+      "resources": []
+    },
+    {
+      "id": "lucky",
+      "title": "Lucky",
+      "provided_by": "thirdparty feed（按需安装；core 2.27.2 构建期预编译二进制，逐架构 SHA256）",
+      "resources": []
+    },
+    {
+      "id": "easytier",
+      "title": "EasyTier",
+      "provided_by": "thirdparty feed（按需安装；core v2.7.0 随包，可在线更新）",
+      "resources": [
+        {
+          "kind": "core",
+          "name": "easytier-core / easytier-cli / easytier-web",
+          "source": "https://api.github.com/repos/EasyTier/EasyTier/releases/latest → https://github.com/EasyTier/EasyTier/releases/download/<tag>/easytier-linux-<arch>-<tag>.zip",
+          "version_source": "easytier-core -h / procd",
+          "sha256": "rolling",
+          "accelerator": "UCI easytier.@easytier[0].github_proxys",
+          "bundled_version": "2.7.0"
+        }
+      ]
+    },
+    {
+      "id": "ttl",
+      "title": "TTL",
+      "provided_by": "thirdparty feed（按需安装）",
       "resources": []
     }
   ]
