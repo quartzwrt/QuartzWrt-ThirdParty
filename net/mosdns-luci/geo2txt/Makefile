@@ -22,7 +22,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/geo2txt
   SECTION:=utils
-  CATEGORY:=Utilities
+  CATEGORY:=QuartzWrt
+  SUBMENU:=1. Base
   TITLE:=V2ray geosite & geoip unpacking CLI tool
   URL:=https://github.com/sbwml/geo2txt
 endef

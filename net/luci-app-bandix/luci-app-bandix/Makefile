@@ -7,6 +7,8 @@ PKG_LICENSE:=Apache-2.0
 
 LUCI_TITLE:=LuCI Bandix app for network traffic monitoring
 LUCI_DEPENDS:=+luci-base +luci-lib-jsonc +curl +bandix 
+LUCI_CATEGORY:=QuartzWrt
+LUCI_SUBMENU_FORCED:=1. Base
 
 PKG_MAINTAINER:=timsaya
 

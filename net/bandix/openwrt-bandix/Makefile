@@ -67,7 +67,8 @@ endif
 
 define Package/$(PKG_NAME)
 	SECTION:=net
-	CATEGORY:=Network
+	CATEGORY:=QuartzWrt
+	SUBMENU:=1. Base
 	TITLE:=Bandix - Network traffic monitoring tool
 	DEPENDS:=+zoneinfo-all +conntrack +iw
 endef

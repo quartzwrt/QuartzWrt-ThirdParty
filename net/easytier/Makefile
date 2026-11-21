@@ -35,7 +35,8 @@ RSTRIP:=:
 
 define Package/$(PKG_NAME)
 	SECTION:=net
-	CATEGORY:=Network
+	CATEGORY:=QuartzWrt
+	SUBMENU:=2. Advanced
 	TITLE:=EasyTier - decentralized mesh VPN with WireGuard support
 	DEPENDS:=@(aarch64||x86_64) +kmod-tun
 	URL:=https://github.com/EasyTier/EasyTier

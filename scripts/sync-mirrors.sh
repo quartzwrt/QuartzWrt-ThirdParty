@@ -2,8 +2,9 @@
 # 上游 / 受控 Fork → 本仓库镜像同步（TDD §4.7；台账 docs/FORKS.md）
 #
 # 机制：把各上游（受控 fork 或上游直取）的指定 ref 以「整仓镜像」方式同步到
-#       本仓库子目录（exclude .git；可按条目排除不需要的包目录），feed 由此仍是
-#       quartz / thirdparty 两条——第三方包内容集中在 QuartzWrt-ThirdParty，
+#       本仓库子目录（exclude .git；可按条目排除不需要的包目录），随后应用
+#       patches/<条目>/*.patch 的本地适配补丁（菜单归组等；补丁失败即硬失败，防漂移），
+#       feed 由此仍是 quartz / thirdparty 两条——第三方包内容集中在 QuartzWrt-ThirdParty，
 #       锁定沿用 thirdparty 的 SHA。受控 fork 仓库保留为「上游跟踪 + quartz
 #       适配分支」的改动脉络。
 #
@@ -53,6 +54,16 @@ for e in "${ENTRIES[@]}"; do
   ex_args=()
   for x in $exclude; do ex_args+=(--exclude="$x"); done
   rsync -a --delete --exclude=.git "${ex_args[@]}" "$TMP/$name/$subpath/" "$ROOT/$dest/"
+  # 本地适配补丁（patches/<entry>/*.patch）：在镜像之后应用，保证「镜像内容 = 上游」
+  # 与「菜单归组等适配」互不污染。上游漂移导致补丁失败时**硬失败**——先 review
+  # 上游 diff 并更新补丁，禁止直接改镜像目录（下次同步会被覆盖）。
+  if compgen -G "$ROOT/patches/$name/*.patch" >/dev/null; then
+    for p in "$ROOT"/patches/"$name"/*.patch; do
+      echo "   patch $(basename "$p")"
+      patch -p1 -d "$ROOT/$dest" --forward --batch --silent < "$p" \
+        || { echo "错误：$name 补丁应用失败（上游漂移？更新 patches/$name 后再同步）" >&2; exit 1; }
+    done
+  fi
   echo "   → $dest（$(git -C "$TMP/$name" log -1 --format='%h %s')）"
 done
 

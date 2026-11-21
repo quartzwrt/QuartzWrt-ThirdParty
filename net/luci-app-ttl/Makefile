@@ -7,6 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=Antitethering module for luci-app-firewall
+LUCI_CATEGORY:=QuartzWrt
+LUCI_SUBMENU_FORCED:=2. Advanced
 #LUCI_DEPENDS:= +luci-app-firewall
 
 PKG_LICENSE:=Apache-2.0

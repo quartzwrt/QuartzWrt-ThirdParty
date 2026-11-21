@@ -26,6 +26,13 @@ git diff --stat                        # ① review
 # ② 更新本表「上次同步」与锁定；③ 提交
 ```
 
+> **菜单归组补丁（2026-11-21，WP-14）**：`patches/<条目>/*.patch` 是镜像后的本地适配
+> （三层菜单 `CATEGORY:=QuartzWrt` + `SUBMENU:=1. Base / 2. Advanced / 3. Device-Specific`），
+> 由 `sync-mirrors.sh` 在 rsync 之后自动应用；上游漂移导致补丁失败即**硬失败**，
+> 先 review 再更新补丁，**不要直接改镜像目录**（会被下次同步覆盖）。
+> `easytier` / `luci-app-easytier` / `luci-app-ttl` 不在同步映射内（op-packages 按目录镜像），
+> 其三处菜单归组为直接修改。
+
 > **op-packages（KWRT 源集合，~335 MB）不纳入 `sync-mirrors.sh` 的全量 clone**：新收录包按目录镜像（GitHub API / tarball），锁定沿用上表记录的 commit；`lucky`/`luci-app-lucky` 已加入脚本（小仓库，取 `main`，同步后回写锁定）。
 
 **上游 → fork 镜像（main）与适配分支跟进**（仅受控 Fork 条目）：

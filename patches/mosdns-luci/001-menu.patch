@@ -1,0 +1,36 @@
+--- a/geo2txt/Makefile
++++ b/geo2txt/Makefile
+@@ -22,7 +22,8 @@
+ 
+ define Package/geo2txt
+   SECTION:=utils
+-  CATEGORY:=Utilities
++  CATEGORY:=QuartzWrt
++  SUBMENU:=1. Base
+   TITLE:=V2ray geosite & geoip unpacking CLI tool
+   URL:=https://github.com/sbwml/geo2txt
+ endef
+--- a/luci-app-mosdns/Makefile
++++ b/luci-app-mosdns/Makefile
+@@ -7,6 +7,8 @@
+ LUCI_TITLE:=LuCI Support for mosdns
+ LUCI_PKGARCH:=all
+ LUCI_DEPENDS:=+mosdns-quartz +uclient-fetch +v2ray-geoip +v2ray-geosite +geo2txt +ucode
++LUCI_CATEGORY:=QuartzWrt
++LUCI_SUBMENU_FORCED:=1. Base
+ 
+ PKG_MAINTAINER:=sbwml <admin@cooluc.com>
+ 
+--- a/mosdns-quartz/Makefile
++++ b/mosdns-quartz/Makefile
+@@ -32,8 +32,8 @@
+ 
+ define Package/mosdns-quartz
+   SECTION:=net
+-  CATEGORY:=Network
+-  SUBMENU:=IP Addresses and Names
++  CATEGORY:=QuartzWrt
++  SUBMENU:=1. Base
+   TITLE:=A plug-in DNS forwarder/splitter
+   URL:=https://github.com/IrineSistiana/mosdns
+   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle

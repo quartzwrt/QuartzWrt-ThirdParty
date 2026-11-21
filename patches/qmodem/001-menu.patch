@@ -1,0 +1,23 @@
+--- a/application/qmodem/Makefile
++++ b/application/qmodem/Makefile
+@@ -12,7 +12,8 @@
+ 
+ define Package/$(PKG_NAME)
+   SECTION:=utils
+-  CATEGORY:=Utilities
++  CATEGORY:=QuartzWrt
++  SUBMENU:=2. Advanced
+   TITLE:=QModem scripts
+   DEPENDS:=	\
+   		+kmod-usb2 +kmod-usb3 \
+--- a/luci/luci-app-qmodem-next/Makefile
++++ b/luci/luci-app-qmodem-next/Makefile
+@@ -9,6 +9,8 @@
+ LUCI_TITLE:=LuCI Modern UI for QModem
+ LUCI_DESCRIPTION:=LuCI modern (JavaScript) interface for QModem.
+ LUCI_DEPENDS:=+qmodem +qmodem-smsd +sms-forwarder-next +luci-base
++LUCI_CATEGORY:=QuartzWrt
++LUCI_SUBMENU_FORCED:=2. Advanced
+ LUCI_PKGARCH:=all
+ LUCI_MAINTAINER:=Tom <fjrcn@outlook.com>
+ 

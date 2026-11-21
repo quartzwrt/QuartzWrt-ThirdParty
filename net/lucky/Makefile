@@ -32,7 +32,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/lucky
   SECTION:=net
-  CATEGORY:=Network
+  CATEGORY:=QuartzWrt
+  SUBMENU:=2. Advanced
   TITLE:=Lucky network utility
   DEPENDS:=@(aarch64||x86_64) @(!TARGET_gemini)
   URL:=https://github.com/gdy666/lucky

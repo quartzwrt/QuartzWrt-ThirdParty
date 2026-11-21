@@ -14,6 +14,8 @@ PKG_PO_VERSION:=$(PKG_VERSION)
 
 LUCI_TITLE:=LuCI support for EasyTier
 LUCI_DEPENDS:=+kmod-tun +easytier +luci-compat
+LUCI_CATEGORY:=QuartzWrt
+LUCI_SUBMENU_FORCED:=2. Advanced
 LUCI_PKGARCH:=all
 
 PKG_NAME:=luci-app-easytier

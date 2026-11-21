@@ -13,6 +13,8 @@ LUCKY_VIEW_NAME:=config-$(LUCKY_ASSET_VERSION)
 LUCI_TITLE:=LuCI support for Lucky
 LUCI_DESCRIPTION:=Manage the Lucky service and its basic web settings.
 LUCI_DEPENDS:=+lucky +rpcd-mod-file +lua +luci-compat +luci-lib-nixio +luci-lib-jsonc +luci-lib-ip
+LUCI_CATEGORY:=QuartzWrt
+LUCI_SUBMENU_FORCED:=2. Advanced
 LUCI_PKGARCH:=all
 PKG_LICENSE:=Apache-2.0
 

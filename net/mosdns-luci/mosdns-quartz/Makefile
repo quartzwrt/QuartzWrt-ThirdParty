@@ -32,8 +32,8 @@ include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
 define Package/mosdns-quartz
   SECTION:=net
-  CATEGORY:=Network
-  SUBMENU:=IP Addresses and Names
+  CATEGORY:=QuartzWrt
+  SUBMENU:=1. Base
   TITLE:=A plug-in DNS forwarder/splitter
   URL:=https://github.com/IrineSistiana/mosdns
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle

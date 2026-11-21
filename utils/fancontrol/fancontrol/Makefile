@@ -14,7 +14,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/fancontrol
   SECTION:=utils
-  CATEGORY:=Utilities
+  CATEGORY:=QuartzWrt
+  SUBMENU:=3. Device-Specific
   TITLE:=Generic hwmon PWM fan controller
 endef
 

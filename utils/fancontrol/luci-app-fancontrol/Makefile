@@ -8,6 +8,8 @@ include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=LuCI support for the generic PWM fan controller
 LUCI_DEPENDS:=+luci-base +fancontrol
+LUCI_CATEGORY:=QuartzWrt
+LUCI_SUBMENU_FORCED:=3. Device-Specific
 LUCI_PKGARCH:=all
 
 PKG_LICENSE:=Apache-2.0

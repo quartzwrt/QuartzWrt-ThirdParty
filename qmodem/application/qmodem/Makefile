@@ -12,7 +12,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   SECTION:=utils
-  CATEGORY:=Utilities
+  CATEGORY:=QuartzWrt
+  SUBMENU:=2. Advanced
   TITLE:=QModem scripts
   DEPENDS:=	\
   		+kmod-usb2 +kmod-usb3 \
