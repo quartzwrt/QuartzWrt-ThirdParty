@@ -1,4 +1,5 @@
 #include "media.h"
+#include "media_pcm_socket.h"
 #include "media_serial.h"
 #include "g711.h"
 
@@ -197,6 +198,13 @@ void qmodem_voip_media_detach(struct qmodem_voip_media_engine *engine)
 		qmodem_voip_serial_set_attached(engine, 0);
 	qmodem_voip_media_queue_clear(&engine->modem_to_canonical);
 	qmodem_voip_media_queue_clear(&engine->canonical_to_modem);
+	engine->alsa_capture_used = engine->alsa_playback_used = engine->alsa_playback_count = 0;
+#ifndef QMODEM_VOIP_HOST_TEST
+	if (engine->backend == QMODEM_VOIP_MEDIA_BACKEND_UAC) {
+		if (engine->capture_pcm) { snd_pcm_drop(engine->capture_pcm); snd_pcm_prepare(engine->capture_pcm); }
+		if (engine->playback_pcm) { snd_pcm_drop(engine->playback_pcm); snd_pcm_prepare(engine->playback_pcm); }
+	}
+#endif
 	zero(&engine->rtp, sizeof(engine->rtp));
 	engine->attachment = QMODEM_VOIP_MEDIA_ATTACH_NONE;
 	engine->session_id = 0;
@@ -217,6 +225,8 @@ void qmodem_voip_media_release(struct qmodem_voip_media_engine *engine)
 #endif
 	if (engine->backend == QMODEM_VOIP_MEDIA_BACKEND_SERIAL)
 		qmodem_voip_serial_close(engine);
+	if (engine->backend == QMODEM_VOIP_MEDIA_BACKEND_PCM_SOCKET)
+		qmodem_voip_pcm_socket_close(engine);
 	if (engine->modem_to_canonical.lock_ready)
 		(void)pthread_mutex_destroy(&engine->modem_to_canonical.lock);
 	if (engine->canonical_to_modem.lock_ready)

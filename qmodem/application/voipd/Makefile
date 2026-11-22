@@ -11,8 +11,6 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-QMODEM_VOIP_MODULE_CC?=clang
-
 define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
@@ -21,7 +19,7 @@ define Package/$(PKG_NAME)
 	+alsa-lib +libsoxr \
 	+PACKAGE_libwebsockets-full:libwebsockets-full \
 	+!PACKAGE_libwebsockets-full:libwebsockets-openssl +px5g-mbedtls \
-	+kmod-usb-serial +kmod-usb-serial-option
+	+kmod-usb-serial +kmod-usb-serial-option +kmod-usb-audio +flock
 endef
 
 define Package/$(PKG_NAME)/description
@@ -34,15 +32,13 @@ define Build/Prepare
 	$(RM) -r $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ../qmodem_media_common/include/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-	$(QMODEM_VOIP_MODULE_CC) --target=arm-linux-gnueabihf -march=armv7-a \
-		-fuse-ld=lld -shared -fPIC -Os -nostdlib -std=gnu11 \
-		-Wall -Wextra -Werror -Wl,--build-id=none -Wl,--hash-style=gnu \
-		-Wl,-soname,libqvoice_media_gate.so \
-		-o $(PKG_BUILD_DIR)/libqvoice_media_gate.so \
-		$(PKG_BUILD_DIR)/qvoice_media_gate.c
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -std=gnu11 -Wall -Wextra -Werror \
+		-o $(PKG_BUILD_DIR)/qmodem_voip_control $(PKG_BUILD_DIR)/voice_control.c \
+		$(TARGET_LDFLAGS) -lubus -lubox -lblobmsg_json -luci
 	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -std=gnu11 -Wall -Wextra -Werror \
 		-I$(STAGING_DIR)/usr/include \
 		-o $(PKG_BUILD_DIR)/qmodem_voip_adb_unlock \
@@ -52,10 +48,11 @@ define Build/Compile
 		-o $(PKG_BUILD_DIR)/qmodem_voip \
 		$(PKG_BUILD_DIR)/main.c $(PKG_BUILD_DIR)/daemon_core.c \
 		$(PKG_BUILD_DIR)/media_manager.c $(PKG_BUILD_DIR)/call_state.c \
-		$(PKG_BUILD_DIR)/modem_profile.c \
+		$(PKG_BUILD_DIR)/modem_profile.c $(PKG_BUILD_DIR)/at_direct.c \
 		$(PKG_BUILD_DIR)/call_history.c \
 		$(PKG_BUILD_DIR)/media_core.c $(PKG_BUILD_DIR)/media_alsa.c \
-		$(PKG_BUILD_DIR)/media_serial.c $(PKG_BUILD_DIR)/browser_media.c \
+		$(PKG_BUILD_DIR)/media_serial.c $(PKG_BUILD_DIR)/media_pcm_socket.c \
+		$(PKG_BUILD_DIR)/browser_media.c \
 		$(PKG_BUILD_DIR)/media_socket.c \
 		$(PKG_BUILD_DIR)/rtp_transport.c \
 		$(TARGET_LDFLAGS) \
@@ -73,11 +70,8 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/usr/lib/qmodem_voip/*.sh $(1)/usr/lib/qmodem_voip/
 	$(INSTALL_DATA) ./files/usr/share/qmodem/modem_supports.json $(1)/usr/share/qmodem/
 	$(INSTALL_DATA) ./files/usr/share/qmodem_voip/modem_profiles.json $(1)/usr/share/qmodem_voip/
-	$(INSTALL_DIR) $(1)/usr/share/qmodem_voip/module
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/libqvoice_media_gate.so $(1)/usr/share/qmodem_voip/module/
-	$(INSTALL_BIN) ./files/usr/share/qmodem_voip/module/install_media_gate.sh \
-		$(1)/usr/share/qmodem_voip/module/
 	$(INSTALL_BIN) ./files/usr/sbin/qmodem_voip_modem_safety $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/qmodem_voip_control $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/usr/sbin/qmodem_voip_daemon_wait $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/usr/sbin/qmodem_voip_web $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/etc/init.d/qmodem_voip $(1)/etc/init.d/

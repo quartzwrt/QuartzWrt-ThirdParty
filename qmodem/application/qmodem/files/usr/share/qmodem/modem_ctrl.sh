@@ -3,9 +3,12 @@ source "${QMODEM_JSHN:-/usr/share/libubox/jshn.sh}"
 qmodem_home="${QMODEM_HOME:-/usr/share/qmodem}"
 method=$1
 config_section=$2
+. "$qmodem_home/instance.sh"
+qmodem_valid_instance "$config_section" || exit 2
+[ "$(uci -q get "qmodem.$config_section.state")" != disabled ] || exit 2
 at_port=$(uci -q get qmodem.$config_section.at_port)
 override_at_port=$(uci -q get qmodem.$config_section.override_at_port)
-[ -n "$override_at_port" ] && at_port=$override_at_port
+[ -z "$override_at_port" ] || { qmodem_port_owned "$config_section" "$override_at_port" || exit 2; at_port=$override_at_port; }
 uci -q get qmodem.$config_section.sms_at_port >/dev/null && sms_at_port=$(uci -q get qmodem.$config_section.sms_at_port)
 vendor=$(uci -q get qmodem.$config_section.manufacturer)
 platform=$(uci -q get qmodem.$config_section.platform)
@@ -32,27 +35,21 @@ if [ -z "$vendor" ] || [ ! -f "$vendor_file" ]; then
 fi
 . $vendor_file
 
+. "$qmodem_home/cache.sh"
+
 try_cache() {
-    cache_timeout=$1
-    cache_file=$2
-    function_name=$3
-    current_time=$(date +%s)
-    if [ -f "$cache_file" ]; then
-        file_time=$(stat -t "$cache_file" | awk '{print $14}')
-    else
-        file_time=0
+    if qmodem_testcase_collect_enabled; then
+        expected_dir="$(qmodem_testcase_profile_dir)/expected"
+        mkdir -p "$expected_dir" 2>/dev/null
+        # Capture separately so tee cannot mask a failed cache query.
+        local cached_result cached_rc
+        cached_result=$(qmodem_cached_query "$@")
+        cached_rc=$?
+        printf '%s\n' "$cached_result" | tee "$expected_dir/$method.json"
+        exit "$cached_rc"
     fi
-    if [ ! -f $cache_file ] || [ $(($current_time - $file_time)) -gt $cache_timeout ]; then
-        touch $cache_file
-        json_add_array modem_info
-        $function_name
-        json_close_array
-        json_dump > $cache_file
-        return 1
-    else
-        cat $cache_file
-        exit 0
-    fi
+    qmodem_cached_query "$@"
+    exit $?
 }
 
 get_sms(){
@@ -102,7 +99,7 @@ get_at_cfg(){
     json_close_array
     override_at_port=$(uci -q get qmodem.$config_section.override_at_port)
     at_port=$(uci -q get qmodem.$config_section.at_port)
-    [ -n "$override_at_port" ] && at_port=$override_at_port
+    [ -z "$override_at_port" ] || { qmodem_port_owned "$config_section" "$override_at_port" || exit 2; at_port=$override_at_port; }
     json_add_string using_port "$at_port"
     json_add_array cmds
     

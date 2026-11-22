@@ -2,10 +2,33 @@
 
 misectel_led_init()
 {
-	local board
+	local board led_group
 
 	board="$(cat /tmp/sysinfo/board_name 2>/dev/null)"
 	case "$board" in
+		misectel,m02k88)
+			# Each physical modem owns one independent SIM + RF1/2/3 bank.
+			[ -n "${QMODEM_LED_SECTION:-}" ] || return 1
+			config_load qmodem_led
+			config_get led_group "$QMODEM_LED_SECTION" led_group
+			case "$led_group" in
+				5g1|5g2) ;;
+				*) return 1 ;;
+			esac
+			LED_SIM="${led_group}:sim"
+			LED_SIGNAL_POOR="${led_group}:rf1"
+			LED_SIGNAL_GOOD="${led_group}:rf2"
+			LED_SIGNAL_EXCELLENT="${led_group}:rf3"
+			LED_5G=
+			;;
+		misectel,m16k43|misectel,m16k43-usb)
+			LED_SIM='blue:sim'
+			LED_SIGNAL_POOR='blue:rf1'
+			LED_SIGNAL_GOOD='blue:rf2'
+			LED_SIGNAL_EXCELLENT='blue:rf3'
+			LED_SIGNAL_MAX='blue:rf4'
+			LED_5G=
+			;;
 		misectel,m01k21)
 			LED_SIGNAL_POOR='lede:blue:4gyellow'
 			LED_SIGNAL_GOOD='lede:blue:5gblue'
@@ -179,6 +202,7 @@ misectel_sim_state()
 
 led_turn()
 {
+	[ -n "$1" ] || return 0
 	local path="/sys/class/leds/$1"
 	local value="$2"
 	local brightness
@@ -201,10 +225,18 @@ misectel_3led_update_signal_leds()
 	local excellent=0
 
 	case "$signal_level" in
+		max) poor=1; good=1; excellent=1 ;;
 		poor) poor=1 ;;
 		good) poor=1; good=1 ;;
 		excellent) poor=1; good=1; excellent=1 ;;
 	esac
+	if [ -z "${LED_SIGNAL_MAX:-}" ]; then
+		:
+	elif [ "$signal_level" = max ]; then
+		led_turn "${LED_SIGNAL_MAX:-}" 1
+	else
+		led_turn "${LED_SIGNAL_MAX:-}" 0
+	fi
 	led_turn "$LED_SIGNAL_POOR" "$poor"
 	led_turn "$LED_SIGNAL_GOOD" "$good"
 	led_turn "$LED_SIGNAL_EXCELLENT" "$excellent"

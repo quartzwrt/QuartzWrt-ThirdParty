@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 static void clear_secret(void *value, size_t length)
 {
@@ -66,6 +67,10 @@ void qmodem_voip_browser_timer(struct uloop_timeout *timeout)
 		app->call.state == QMODEM_VOIP_ACTIVE &&
 		qmodem_voip_media_socket_attached(&app->media_sock);
 	(void)timeout;
+	if (qmodem_voip_native_media_fault()) {
+		if (app->native_media_fault_pending) uloop_timeout_set(&app->browser_timer, 20);
+		return;
+	}
 	qmodem_voip_media_sync();
 	if (app->media.ready && !app->media_sock.ready)
 		(void)qmodem_voip_media_socket_start(&app->media_sock, &app->media,
@@ -98,12 +103,23 @@ void qmodem_voip_media_status(struct blob_buf *buffer)
 		backend = "serial_pcm";
 	else if (app->media.backend == QMODEM_VOIP_MEDIA_BACKEND_UAC)
 		backend = "uac";
+	else if (app->media.backend == QMODEM_VOIP_MEDIA_BACKEND_PCM_SOCKET)
+		backend = "pcm_socket";
 	/* `media` is the stable capability consumed by LuCI.  Keep it tied to
 	 * the modem media engine, while `browser_media` continues to describe
 	 * the optional, call-scoped WebSocket attachment. */
 	blobmsg_add_string(buffer, "media", app->media.ready ? "ready" : "not_ready");
 	blobmsg_add_string(buffer, "media_engine", app->media.ready ? "ready" : "not_ready");
 	blobmsg_add_string(buffer, "media_backend", backend);
+	if (!strcmp(app->media.profile.model, "RM520N-GL")) {
+		blobmsg_add_string(buffer, "audio_policy", app->media.profile.audio_policy);
+		blobmsg_add_string(buffer, "selection_state", app->media.profile.selection_state);
+		blobmsg_add_string(buffer, "fallback_reason", app->media.profile.fallback_reason);
+		blobmsg_add_string(buffer, "audio_firmware", app->media.profile.firmware);
+		blobmsg_add_u8(buffer, "firmware_verified", !strcmp(app->media.profile.selection_state, "enabled"));
+		blobmsg_add_string(buffer, "last_error", !strcmp(app->media.profile.selection_state, "failed") ?
+			"native_audio_failed" : "");
+	}
 	blobmsg_add_string(buffer, "browser_media", app->browser.ready ? "ready" : "not_ready");
 	blobmsg_add_string(buffer, "rtp_media", app->rtp.active ? "attached" : "detached");
 	if (qmodem_voip_browser_media_url(&app->browser, media_url, sizeof(media_url)))
@@ -143,6 +159,15 @@ void qmodem_voip_media_status(struct blob_buf *buffer)
 		atomic_load(&app->media.serial.write_errors));
 	blobmsg_add_u64(buffer, "serial_reopen_count",
 		atomic_load(&app->media.serial.reopen_count));
+	if (app->media.backend == QMODEM_VOIP_MEDIA_BACKEND_PCM_SOCKET) {
+		blobmsg_add_u8(buffer, "pcm_socket_connected", app->media.pcm_socket.fd >= 0);
+		blobmsg_add_u64(buffer, "pcm_socket_capture_frames",
+			app->media.pcm_socket.capture_frames);
+		blobmsg_add_u64(buffer, "pcm_socket_playback_frames",
+			app->media.pcm_socket.playback_frames);
+		blobmsg_add_u64(buffer, "pcm_socket_connects", app->media.pcm_socket.connects);
+		blobmsg_add_u64(buffer, "pcm_socket_errors", app->media.pcm_socket.errors);
+	}
 	blobmsg_add_u64(buffer, "rtp_receive_packets",
 		atomic_load(&app->media.rtp_received_packets));
 	blobmsg_add_u64(buffer, "rtp_send_packets",
@@ -201,6 +226,17 @@ int qmodem_voip_media_token_method(struct ubus_context *ubus,
 		return qmodem_voip_reply_status(ubus, request, UBUS_STATUS_INVALID_ARGUMENT,
 			"invalid_session", "session, revision, or origin is invalid");
 	blob_buf_init(&buffer, 0);
+    /* Existing uhttpd media endpoint follows the selected modem for new
+     * connections. Established streams retain their original worker fd. */
+    if(app->group[0]) {
+        char temporary[192];
+        snprintf(temporary,sizeof(temporary),"/var/run/qmodem_voip/websocket.%ld",(long)getpid());
+        unlink(temporary);
+        if(symlink(app->browser.socket_path,temporary) || rename(temporary,"/var/run/qmodem_voip/websocket.sock")) {
+            unlink(temporary);blob_buf_free(&buffer);clear_secret(token,sizeof(token));
+            return UBUS_STATUS_UNKNOWN_ERROR;
+        }
+    }
 	blobmsg_add_string(&buffer, "token", token);
 	blobmsg_add_u32(&buffer, "expires_in", QMODEM_VOIP_BROWSER_TOKEN_TTL);
 	blobmsg_add_u64(&buffer, "call_revision", revision);

@@ -1,6 +1,7 @@
 #ifndef QMODEM_VOIP_DAEMON_CORE_H
 #define QMODEM_VOIP_DAEMON_CORE_H
 
+#include "at_direct.h"
 #include "call_state.h"
 #include "media.h"
 #include "rtp_transport.h"
@@ -14,11 +15,19 @@
 struct qmodem_voip_media_manager;
 
 struct qmodem_voip_context {
+	char group[64];
+	char modem_id[64];
+	char object_name[96];
+	char journal_path[256];
+	char history_path[256];
 	struct ubus_context *ubus;
 	struct ubus_object object;
 	struct ubus_event_handler at_events;
 	struct ubus_event_handler urc_events;
 	struct qmodem_voip_call call;
+	struct qmodem_voip_at_direct idle_at;
+	struct ubus_request idle_at_request;
+	int idle_at_reply_ok;
 	struct qmodem_voip_media_engine media;
 	struct qmodem_voip_rtp_transport rtp;
 	struct qmodem_voip_browser_media browser;
@@ -27,6 +36,7 @@ struct qmodem_voip_context {
 	struct uloop_timeout browser_timer;
 	struct uloop_timeout call_timer;
 	struct uloop_timeout activation_timer;
+	unsigned int activation_attempts;
 	struct uloop_timeout restart_timer;
 	struct uloop_process serial_arm_process;
 	struct uloop_process voice_restart_process;
@@ -36,6 +46,7 @@ struct qmodem_voip_context {
 	unsigned int serial_active_arm_attempts;
 	unsigned int serial_active_generation;
 	unsigned int serial_arm_process_generation;
+	int native_media_fault_pending;
 	int start_enabled;
 	int stop;
 };
@@ -82,6 +93,7 @@ int qmodem_voip_reply_status(struct ubus_context *ubus,
 			     const char *error, const char *message);
 int qmodem_voip_reply_ok_snapshot(struct ubus_context *ubus,
 				  struct ubus_request_data *request);
+int qmodem_voip_native_media_fault(void);
 void qmodem_voip_call_timer(struct uloop_timeout *timeout);
 void qmodem_voip_activation_timer(struct uloop_timeout *timeout);
 void qmodem_voip_restart_timer(struct uloop_timeout *timeout);
