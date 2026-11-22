@@ -1,0 +1,39 @@
+name: Sync thirdparty upstreams
+
+# kwrt 式节奏 + 审查闸门：每周同步镜像上游并开 PR（不直接推 main）。
+# sync-mirrors.sh 会先 rsync 再应用 patches/<条目>/*.patch；补丁失败即 job 失败，
+# 提示上游漂移需要人工 review。
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # 每周一 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mirror upstream packages
+        run: bash scripts/sync-mirrors.sh
+
+      - name: Open/update sync PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: sync/upstreams
+          delete-branch: true
+          commit-message: 'sync: mirror upstream thirdparty packages'
+          title: 'sync: 上游第三方包同步（自动）'
+          body: |
+            自动同步上游第三方包镜像（`scripts/sync-mirrors.sh`，含 `patches/` 应用）。
+
+            审查要点：
+            - [ ] `docs/FORKS.md` 的锁定 / 上次同步日期已更新
+            - [ ] 菜单补丁仍应用成功（脚本失败即未开 PR；成功说明上游未破坏上下文）
+            - [ ] 涉及包单包编译（`make package/feeds/thirdparty/<pkg>/{clean,compile}`）
+            - [ ] `check-duplicate-packages.sh` 通过（外侧由 Builder 构建再兜底）
+            - [ ] 许可 / 依赖无变化（qmodem 等受控 Fork 仍指向 `quartz` 分支 tag）
