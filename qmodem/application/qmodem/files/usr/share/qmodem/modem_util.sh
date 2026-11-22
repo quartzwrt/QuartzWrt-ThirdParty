@@ -174,7 +174,7 @@ log2sys()
 {
     local subject="$1"
     local msg="$2"
-    logger -t "$subject" "$msg"
+    logger -t "$subject" -p user.debug "$msg"
 }
 
 m_debug ()

@@ -40,7 +40,7 @@
 | `bandix`（+ `luci-app-bandix`） | [timsaya/openwrt-bandix](https://github.com/timsaya/openwrt-bandix) / [timsaya/luci-app-bandix](https://github.com/timsaya/luci-app-bandix) | 受控 Fork + 镜像（`net/bandix/`、`net/luci-app-bandix/`） | fork `main` @ `c95b03d` / `159a6de` | 镜像落地；单包编译验证待做（W7.2） |
 | `quartz-runtime-resources` | 本仓库（自研数据包） | 薄 Makefile（数据包，PKGARCH all） | v1.0.0 | 已编译 ✅（清单 + 探针描述符） |
 | `luci-app-mosdns` + `geo2txt` | [sbwml/luci-app-mosdns](https://github.com/sbwml/luci-app-mosdns) | 上游直取 + 镜像（`net/mosdns-luci/`，排除 `mosdns/`——基座已提供） | tag `v5.3.4-r14` @ `fae49a2` | 镜像落地 + 单包编译 ✅（余 VM 渲染验收） |
-| `qmodem`（33 包） | [FUjr/QModem](https://github.com/FUjr/QModem) | 受控 Fork + 镜像（`qmodem/`） | fork `quartz` @ `9ffada2`（tag `v3.4.0_rc3-quartz1`） | 镜像落地（含 `PKG_RELEASE` 固定适配）；单包编译验证待做（W7.8） |
+| `qmodem`（33 包） | [FUjr/QModem](https://github.com/FUjr/QModem) | 受控 Fork + 镜像（`qmodem/`） | fork `quartz` @ `6b5a3d4` | 镜像落地（含 `PKG_RELEASE` 固定、MH5000-82M 端口规则修复）；单包编译验证待做（W7.8） |
 | `fancontrol` + `luci-app-fancontrol` | [JiaY-shi/fancontrol](https://github.com/JiaY-shi/fancontrol) | 上游直取 + 镜像（`utils/fancontrol/`，一仓两包） | tag `v2.1.0` @ `bdd7293` | 镜像落地；设备（FNet3399）预装 + 调速曲线走 Builder `devices/` 层 |
 | `lucky` + `luci-app-lucky` | [gdy666/luci-app-lucky](https://github.com/gdy666/luci-app-lucky) | 上游直取 + 镜像（`net/lucky/`、`net/luci-app-lucky/`） | 上游 `69305fe`（core `2.27.2` / app `3.0.0-r28`） | 单包编译 ✅；core 预编译二进制，仅 x86_64/aarch64，逐架构 SHA256；app 依赖 `luci-compat` |
 | `luci-app-ttl` | [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（KWRT 源集合） | 上游直取 + 镜像（`net/luci-app-ttl/`） | op-packages @ `6a9f4a9`（`0.0.7-r6`） | 单包编译 ✅；nft/iptables 双后端 |

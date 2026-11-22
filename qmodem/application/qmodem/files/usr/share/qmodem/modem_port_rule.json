@@ -96,6 +96,8 @@
                 "mode": "rndis",
                 "option_driver": 1,
                 "include": [
+                    "1.0",
+                    "1.1",
                     "1.2"
                 ]
             },
@@ -104,6 +106,8 @@
                 "mode": "ecm",
                 "option_driver": 1,
                 "include": [
+                    "1.0",
+                    "1.1",
                     "1.2"
                 ]
             },
@@ -112,6 +116,8 @@
                 "mode": "ncm",
                 "option_driver": 1,
                 "include": [
+                    "1.0",
+                    "1.1",
                     "1.2"
                 ]
             },
