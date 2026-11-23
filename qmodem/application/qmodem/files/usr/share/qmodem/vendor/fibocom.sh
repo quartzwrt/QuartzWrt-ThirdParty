@@ -819,17 +819,26 @@ base_info()
 
 fibocom_get_carrier()
 {
-    local carrier
+    local carrier plmn
 
     case "$platform" in
         "mediatek")
-            carrier=$(cmd_gtcurcar_query "$at_port" | awk -F'"' '/^\+GTCURCAR:/ {print $2; exit}')
+            carrier=$(cmd_gtcurcar_query "$at_port" | tr -d '\r' | awk -F'"' '/^[+]GTCURCAR:/ {print $2; exit}')
             ;;
     esac
     case "$(printf '%s' "$carrier" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
-        generic|unknown) carrier="" ;;
+        ""|generic|unknown) carrier="" ;;
     esac
-    [ -n "$carrier" ] || carrier=$(cmd_cops_query "$at_port" | grep "+COPS" | awk -F'"' '{print $2}')
+    [ -n "$carrier" ] || carrier=$(cmd_cops_query "$at_port" | tr -d '\r' | awk -F'"' '/^[+]COPS:/ {print $2; exit}')
+    # 部分固件/网络在名称格式下返回 "????"，回退到数字 PLMN
+    case "$carrier" in
+        ""|"????")
+            at "$at_port" "AT+COPS=3,2" >/dev/null 2>&1
+            plmn=$(cmd_cops_query "$at_port" | tr -d '\r' | awk -F'"' '/^[+]COPS:/ {print $2; exit}')
+            at "$at_port" "AT+COPS=3,0" >/dev/null 2>&1
+            [ -n "$plmn" ] && carrier="$plmn"
+            ;;
+    esac
     echo "$carrier"
 }
 
@@ -839,7 +848,7 @@ sim_info()
     m_debug "Fibocom sim info"
     
     #SIM Slot（SIM卡卡槽）
-	sim_slot=$(cmd_gtdualsim_query "$at_port" | grep "+GTDUALSIM" | awk -F'"' '{print $2}' | sed 's/SUB//g')
+	sim_slot=$(cmd_gtdualsim_query "$at_port" | tr -d '\r' | awk -F'"' '/^[+]GTDUALSIM:/ {print $2; exit}' | sed 's/SUB//g')
 
     #IMEI（国际移动设备识别码）
 	imei=$(cmd_cgsn "$at_port" | grep "+CGSN: " | awk -F'"' '{print $2}')
@@ -878,9 +887,9 @@ sim_info()
     }
 
     #ICCID（集成电路卡识别码）
-    iccid=$(cmd_iccid "$at_port" | grep -o "+ICCID:[ ]*[-0-9]\+" | grep -o "[-0-9]\{1,4\}")
-		[ -z "$iccid" ] && {
-        iccid=$(cmd_ccid "$at_port" | grep -o "+CCID:[ ]*[-0-9]\+" | awk -F' ' '{print $2}')
+    iccid=$(cmd_iccid "$at_port" | tr -d '\r' | sed -n 's/^+ICCID:[[:space:]]*//p' | tr -d ' \n')
+    [ -z "$iccid" ] && {
+        iccid=$(cmd_ccid "$at_port" | tr -d '\r' | sed -n 's/^+CCID:[[:space:]]*//p' | tr -d ' \n')
     }
     class="SIM Information"
     case "$sim_status" in
@@ -944,11 +953,19 @@ network_info()
     m_debug "Fibocom network info"
     class="Network Information"
     #Network Type（网络类型）
-    network_type=$(cmd_psrat_query "$at_port" | grep "+PSRAT:" | sed 's/+PSRAT: //g' | sed 's/\r//g')
+    network_type=$(cmd_psrat_query "$at_port" | tr -d '\r' | sed -n 's/^+PSRAT:[[:space:]]*//p' | head -n1)
 
+    #部分固件在 SA 下 +PSRAT 恒回 NONE，按 COPS AcT 回退
+    case "$network_type" in
+        ""|NONE|none) network_type="" ;;
+    esac
     [ -z "$network_type" ] && {
-        local rat_num=$(cmd_cops_query "$at_port" | grep "+COPS:" | awk -F',' '{print $4}' | sed 's/\r//g')
-        network_type=$(get_rat ${rat_num})
+        local rat_num=$(cmd_cops_query "$at_port" | tr -d '\r' | sed -n 's/^+COPS:.*,\([0-9][0-9]*\)[[:space:]]*$/\1/p' | head -n1)
+        case "$rat_num" in
+            "11"|"12") network_type="NR5G" ;;
+            "13") network_type="EN-DC" ;;
+            *) network_type=$(get_rat "$rat_num") ;;
+        esac
     }
     add_plain_info_entry "Network Type" "$network_type" "Network Type"
     case $platform in
@@ -1430,19 +1447,6 @@ get_bandwidth()
         "NR")
             case $bandwidth_num in
                 "0") bandwidth="5" ;;
-                "1") bandwidth="10" ;;
-                "2") bandwidth="15" ;;
-                "3") bandwidth="20" ;;
-                "4") bandwidth="25" ;;
-                "5") bandwidth="30" ;;
-                "6") bandwidth="40" ;;
-                "7") bandwidth="50" ;;
-                "8") bandwidth="60" ;;
-                "9") bandwidth="70" ;;
-                "10") bandwidth="80" ;;
-                "11") bandwidth="90" ;;
-                "12") bandwidth="100" ;;
-                "25"|"50"|"75"|"100"|"125"|"150"|"200"|"250"|"300"|"400"|"500") bandwidth=$((bandwidth_num / 5)) ;;
                 *) bandwidth="$bandwidth_num" ;;
             esac
         ;;
