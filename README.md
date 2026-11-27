@@ -45,5 +45,7 @@
 | `lucky` + `luci-app-lucky` | [gdy666/luci-app-lucky](https://github.com/gdy666/luci-app-lucky) | 上游直取 + 镜像（`net/lucky/`、`net/luci-app-lucky/`） | 上游 `69305fe`（core `2.27.2` / app `3.0.0-r28`） | 单包编译 ✅；core 预编译二进制，仅 x86_64/aarch64，逐架构 SHA256；app 依赖 `luci-compat` |
 | `luci-app-ttl` | [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（KWRT 源集合） | 上游直取 + 镜像（`net/luci-app-ttl/`） | op-packages @ `6a9f4a9`（`0.0.7-r6`） | 单包编译 ✅；nft/iptables 双后端 |
 | `easytier` + `luci-app-easytier` | [EasyTier/EasyTier](https://github.com/EasyTier/EasyTier) / `kiddin9/op-packages` | 预编译二进制 + 镜像（`net/easytier/`、`net/luci-app-easytier/`） | core `v2.7.0`（x86_64/aarch64 逐架构 SHA256）；app `2.7.0-r15` @ `6a9f4a9` | 单包编译 ✅；core 仅 x86_64/aarch64；在线更新走上游 release |
+| `homebox`（局域网测速内核） | [XGHeaven/homebox](https://github.com/XGHeaven/homebox) | 上游直取（预编译二进制，`net/homebox/`） | tag `v0.2.0`（x86_64/aarch64 musl，逐架构 SHA256） | 单包编译 ✅；init `homebox serve --host 0.0.0.0 --port 3300`；**⚠ 上游无任何 LICENSE（All rights reserved），按原样再分发——2026-11-27 用户明示接受**；详见 `docs/FORKS.md` |
+| `luci-app-homebox` | [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（上游源头 `selfcan/luci-app-homebox`，MIT） | 上游直取 + 镜像（`net/luci-app-homebox/`） | op-packages @ `6a9f4a9`（`1.0.1-r4`） | 单包编译 ✅；三层菜单归组 + 补 `luci-compat`；启用开关/状态/跳转 3300 |
 
 > 2026-10-12 移除 `luci-app-openclash`、`luci-app-dockerman`：基座 luci feed 已提供同名包（feeds 先列者胜，本 feed 被遮蔽，且基座版本随基座 commit 锁定），按「基座已提供则不收录」原则删除，由 `quartz-defaults` 直接依赖基座版本。

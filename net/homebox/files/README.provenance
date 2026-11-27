@@ -1,0 +1,18 @@
+HomeBox (homebox) —— 二进制来源与授权声明
+=========================================
+
+上游项目：https://github.com/XGHeaven/homebox
+收录版本：v0.2.0（2026-10-27 发布，Rust 重写版）
+
+二进制来源（上游 GitHub Release 原样再分发，未做修改）：
+  homebox-linux-amd64-musl.tar.gz
+    sha256 7ecaf4cf2dc613fef060642bc999acc8b3e8bb93570be83ded1b7f8831eb0184
+  homebox-linux-arm64-musl.tar.gz
+    sha256 a8682498ae848489dcc4a5483f4e3a657cf4cf0a25af49a38f6751283b1046e8
+
+授权：上游仓库未提供任何 LICENSE 或许可声明（All rights reserved）。
+      QuartzWrt 仅按「原样」分发上游发布产物，不附带、也不授予任何额外权利。
+      收录决定、适用约束与复核记录见 QuartzWrt-ThirdParty/docs/FORKS.md。
+
+服务形态：/usr/bin/homebox serve --host 0.0.0.0 --port 3300（端口固定，
+           luci-app-homebox 的状态检测与跳转按钮按 3300 实现）。

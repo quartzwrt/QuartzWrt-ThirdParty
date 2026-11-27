@@ -17,6 +17,8 @@ feed 仍只有 `quartz` / `thirdparty` 两条，锁定沿用 thirdparty 的 comm
 | [gdy666/luci-app-lucky](https://github.com/gdy666/luci-app-lucky) | 上游直取 | `net/lucky/`、`net/luci-app-lucky/` | commit `69305fef127259892ba4603e98f730f0330e5caa`（core `2.27.2-r3`、app `3.0.0-r28`） | **core 为预编译二进制**（上游只发二进制）：`lucky_2.27.2_Linux_{arm64,x86_64}.tar.gz`，逐架构 SHA256 固定；仅承诺 x86_64/aarch64；安装上游 `LICENSE` 到 `/usr/share/licenses/lucky/`。app 增 `+luci-compat`（Lua 控制器/视图）与 `PKG_PO_VERSION`。 | 2026-10-21（单包编译 ✅：`lucky-2.27.2-r3.apk`、`luci-app-lucky-3.0.0-r28.apk`） |
 | [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（KWRT 源集合） | 上游直取 | `net/luci-app-ttl/` | op-packages commit `6a9f4a92f2849518ae08b57c7516639d294e5124`（`luci-app-ttl` `0.0.7-r6`） | 纯 LuCI 镜像；补 `PKG_PO_VERSION`（避免 i18n 包版本为 0）。 | 2026-10-21（单包编译 ✅） |
 | [EasyTier/EasyTier](https://github.com/EasyTier/EasyTier) + [kiddin9/op-packages](https://github.com/kiddin9/op-packages) | 预编译二进制 + 上游直取 | `net/easytier/`、`net/luci-app-easytier/` | core `v2.7.0`（aarch64 `8abc5d850ad140cd071475a2dd2b4b135f7e0e8b7271897f01fc08a5c0a9c1b0`、x86_64 `442238912065537c280869089217303e3d2813e9c5d2a6b14deaf25667065aa2`）；app `2.7.0-r15` @ `6a9f4a9` | **backend 重写**为 `PKG_SOURCE` + `PKG_SOURCE_URL` + 逐架构 `PKG_HASH`（原 op-packages 用 `PKG_HASH:=skip` + `wget`，不满足本 feed 校验要求）；仅 x86_64/aarch64；`unzip -j` 取平铺二进制；安装 LGPL-3.0 文本。app 原样镜像（运行期在线更新走 GitHub release）。 | 2026-10-21（单包编译 ✅） |
+| [XGHeaven/homebox](https://github.com/XGHeaven/homebox) | 上游直取（预编译二进制） | `net/homebox/` | tag `v0.2.0`（`d9c540e40cd6955620edddc12cca16ecd9bf4e32`）；二进制 amd64 `7ecaf4cf2dc613fef060642bc999acc8b3e8bb93570be83ded1b7f8831eb0184` / arm64 `a8682498ae848489dcc4a5483f4e3a657cf4cf0a25af49a38f6751283b1046e8` | 薄 Makefile 直取上游 release 的 `homebox-linux-{amd64,arm64}-musl.tar.gz`（逐架构 `PKG_HASH`，仅 x86_64/aarch64）；init 固定 `homebox serve --host 0.0.0.0 --port 3300`（端口与 `luci-app-homebox` 的状态接口/跳转按钮一致），uci 仅 `enabled`/`logger`。**⚠ 授权：上游仓库无任何 LICENSE/许可声明（All rights reserved）**——2026-11-27 用户明示接受「按原样再分发上游二进制」（`PKG_LICENSE:=Proprietary`）；上游补许可或 QuartzWrt 商业化须重审。来源与哈希随包投放 `/usr/share/licenses/homebox/README`。**另**：`sirpdboy/luci-app-netspeedtest`（同类 HomeBox 前端）2026-03 被 GitHub DMCA 下架、`sirpdboy/netspeedtest` 内 homebox 为二次转包（v1.0.1，非上游版本）——**不采用** | 2026-11-27（单包编译 ✅ `homebox-0.2.0-r1.apk`，aarch64） |
+| [kiddin9/op-packages](https://github.com/kiddin9/op-packages)（`luci-app-homebox`；上游源头 [selfcan/luci-app-homebox](https://github.com/selfcan/luci-app-homebox)，MIT） | 上游直取 | `net/luci-app-homebox/` | op-packages `6a9f4a9`（`1.0.1-r4`；该目录自 `6a9f4a9` 至 2026-11-27 HEAD `eb0dcb9` 逐文件哈希一致） | 纯 LuCI 镜像 + 直接适配（op-packages 不入 `sync-mirrors.sh` 全量同步，同 `luci-app-ttl`/`luci-app-easytier`）：三层菜单归组（`LUCI_CATEGORY:=QuartzWrt` / `LUCI_SUBMENU_FORCED:=2. Advanced`）、版本号归一 `1.0.1-r4`（`PKG_PO_VERSION` 同步）、补 `+luci-compat`（Lua 控制器/视图）。随目录附上游 MIT 全文（`LICENSE`，Copyright (c) 2022 Siriling）。**不改功能逻辑**（启用开关 + 状态 + 跳转 3300） | 2026-11-27（单包编译 ✅ `luci-app-homebox-1.0.1-r4.apk` + `luci-i18n-homebox-zh-cn-1.0.1-r4.apk`） |
 
 **同步操作**：
 
@@ -30,8 +32,8 @@ git diff --stat                        # ① review
 > （三层菜单 `CATEGORY:=QuartzWrt` + `SUBMENU:=1. Base / 2. Advanced / 3. Device-Specific`），
 > 由 `sync-mirrors.sh` 在 rsync 之后自动应用；上游漂移导致补丁失败即**硬失败**，
 > 先 review 再更新补丁，**不要直接改镜像目录**（会被下次同步覆盖）。
-> `easytier` / `luci-app-easytier` / `luci-app-ttl` 不在同步映射内（op-packages 按目录镜像），
-> 其三处菜单归组为直接修改。
+> `easytier` / `luci-app-easytier` / `luci-app-ttl` / `luci-app-homebox` 不在同步映射内（op-packages 按目录镜像），
+> 其菜单归组等适配为直接修改。
 
 > **op-packages（KWRT 源集合，~335 MB）不纳入 `sync-mirrors.sh` 的全量 clone**：新收录包按目录镜像（GitHub API / tarball），锁定沿用上表记录的 commit；`lucky`/`luci-app-lucky` 已加入脚本（小仓库，取 `main`，同步后回写锁定）。
 
